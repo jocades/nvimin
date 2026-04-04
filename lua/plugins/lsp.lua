@@ -1,21 +1,11 @@
 return {
   "neovim/nvim-lspconfig",
-  lazy = false,
   deps = {
-    "aznhe21/actions-preview.nvim",
     { "j-hui/fidget.nvim", opts = {} },
+    { "mason-org/mason.nvim", opts = {} },
+    "aznhe21/actions-preview.nvim",
   },
   config = function()
-    vim.lsp.config("*", {
-      capabilities = {
-        textDocument = {
-          semanticTokens = {
-            multilineTokenSupport = false,
-          },
-        },
-      },
-    })
-
     ---@type table<string, vim.lsp.Config>
     local servers = {
       -- Lua
@@ -24,7 +14,6 @@ return {
           Lua = {
             version = "LuaJIT",
             workspace = {
-              library = { vim.env.VIMRUNTIME },
               checkThirdParty = false,
             },
             codeLens = { enable = true },
@@ -136,6 +125,8 @@ return {
           { "gI", vim.lsp.buf.implementation, "Goto Implementation" },
           { "]d", jump(1), "Goto Next Diagnostic" },
           { "[d", jump(-1), "Goto Previous Diagnostic" },
+          { "]i", jump(1, vim.diagnostic.severity.INFO), "Goto Next Info" },
+          { "[i", jump(-1, vim.diagnostic.severity.INFO), "Goto Previous Info" },
           { "]e", jump(1, vim.diagnostic.severity.ERROR), "Goto Next Error" },
           { "[e", jump(-1, vim.diagnostic.severity.ERROR), "Goto Previous Error" },
           { "]w", jump(1, vim.diagnostic.severity.WARN), "Goto Next Warning" },

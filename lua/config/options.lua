@@ -56,6 +56,7 @@ local opts = {
   colorcolumn = "100", -- Line length marker (ruler)
   conceallevel = 2, -- Hide text
   concealcursor = "", -- Expand hidden text when cursor in concealed text
+  winborder = "single", -- Bordered windows
 }
 
 for k, v in pairs(opts) do

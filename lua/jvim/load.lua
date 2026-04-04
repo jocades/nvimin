@@ -7,6 +7,7 @@
 ---@field keys? jvim.KeySpec[]
 ---@field event? vim.api.keyset.events|vim.api.keyset.events[]
 ---@field cmd? string|string[]
+---@field ft? string|string[]
 ---@field opts? table|fun():table?
 ---@field config? fun(opts: table)
 
@@ -64,6 +65,7 @@ local function on_key(keymap, cb)
   local lhs = keymap[1]
   local rhs = keymap[2]
   vim.keymap.set(mode, lhs, function()
+    print("on_key")
     vim.keymap.del(mode, lhs)
     cb()
     vim.keymap.set(mode, lhs, rhs)
@@ -72,12 +74,27 @@ local function on_key(keymap, cb)
   end)
 end
 
+---@param ft string
+---@param cb fun()
+local function on_ft(ft, cb)
+  vim.api.nvim_create_autocmd("FileType", {
+    once = true,
+    pattern = ft,
+    callback = cb,
+  })
+end
+
 local function stem(name)
   return vim.fn.fnamemodify(name, ":t")
 end
 
 local function modname(name)
   return name:lower():gsub("^n?vim%-", ""):gsub("%.n?vim$", ""):gsub("[%.%-]lua", "")
+end
+
+---@param v string|string[]
+local function aslist(v)
+  return type(v) == "string" and { v } or v
 end
 
 function Plugin:setup()
@@ -106,9 +123,7 @@ function Plugin:setup()
 
   if self.spec.cmd then
     scheduled = true
-    local cmds = type(self.spec.cmd) == "string" and { self.spec.cmd } or self.spec.cmd
-    ---@cast cmds string[]
-    for _, cmd in ipairs(cmds) do
+    for _, cmd in ipairs(aslist(self.spec.cmd)) do
       on_cmd(cmd, function()
         self:load()
         --local message = ("Load on cmd(%s): %s\n"):format(cmd, self.spec[1])
@@ -132,6 +147,15 @@ function Plugin:setup()
         --    jvim.error(err)
         --  end
         --end)
+      end)
+    end
+  end
+
+  if self.spec.ft then
+    scheduled = true
+    for _, ft in ipairs(aslist(self.spec.ft)) do
+      on_ft(ft, function()
+        self:load()
       end)
     end
   end

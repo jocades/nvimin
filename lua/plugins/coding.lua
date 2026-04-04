@@ -1,4 +1,3 @@
----@type jvim.Spec[]
 return {
   {
     "windwp/nvim-autopairs",
@@ -13,15 +12,34 @@ return {
   },
 
   {
+    "folke/lazydev.nvim",
+    ft = "lua",
+    opts = {},
+  },
+
+  {
     "saghen/blink.cmp",
     version = vim.version.range("1"),
     event = "InsertEnter",
+    ---@module "blink.cmp"
+    ---@type blink.cmp.Config
     opts = {
       keymap = {
         preset = "default",
         ["<C-j>"] = { "select_next" },
         ["<C-k>"] = { "select_prev" },
         ["<C-u>"] = { "select_and_accept" },
+      },
+      sources = {
+        default = { "lsp", "buffer", "snippets", "path" },
+        per_filetype = { lua = { inherit_defaults = true, "lazydev" } },
+        providers = {
+          lazydev = {
+            name = "LazyDev",
+            module = "lazydev.integrations.blink",
+            score_offset = 100,
+          },
+        },
       },
     },
   },
