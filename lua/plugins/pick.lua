@@ -1,7 +1,8 @@
 return {
   {
     "nvim-mini/mini.files",
-    deps = { { "nvim-mini/mini.icons", lazy = true } },
+    lazy = false,
+    deps = { "nvim-mini/mini.icons" },
     opts = {},
     keys = {
       {

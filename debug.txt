@@ -1,14 +1,11 @@
-Load on event(LazyLoad): christoomey/vim-tmux-navigator
-Load on event(LazyLoad): MunifTanjim/nui.nvim
-Load on event(LazyLoad): neovim/nvim-lspconfig
-Load on event(LazyLoad): aznhe21/actions-preview.nvim
-Load on event(LazyLoad): j-hui/fidget.nvim
-Load on event(LazyLoad): folke/trouble.nvim
-Load on key(<C-n>): nvim-neo-tree/neo-tree.nvim
-Load on event(BufReadPost): lukas-reineke/indent-blankline.nvim
-Load on event(InsertEnter): windwp/nvim-autopairs
-Load on event(InsertEnter): saghen/blink.cmp
-Load on event(InsertEnter): windwp/nvim-ts-autotag
-Load on event(InsertEnter): nvim-treesitter/nvim-treesitter-textobjects
-Load on event(InsertEnter): kylechui/nvim-surround
-Load on event(BufWritePre): stevearc/conform.nvim
+[03:50:08] Load on start: nvim-treesitter/nvim-treesitter
+[03:50:08] Load on start: nvim-mini/mini.files
+[03:50:08] Load on event(LazyLoad): folke/trouble.nvim
+[03:50:08] Load on event(LazyLoad): neovim/nvim-lspconfig
+[03:50:08] Load on event(LazyLoad): j-hui/fidget.nvim
+[03:50:08] Load on event(LazyLoad): mason-org/mason.nvim
+[03:50:08] Load on event(LazyLoad): aznhe21/actions-preview.nvim
+[03:50:08] Load on event(LazyLoad): christoomey/vim-tmux-navigator
+[03:50:08] Load on event(LazyLoad): nvim-mini/mini.icons
+[03:50:14] Load on event(BufReadPost): lukas-reineke/indent-blankline.nvim
+[03:50:14] Load on ft(lua): folke/lazydev.nvim

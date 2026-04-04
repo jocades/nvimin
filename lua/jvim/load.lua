@@ -1,3 +1,5 @@
+local M = {}
+
 ---@class jvim.Spec
 ---@field [1] string
 ---@field version? string|vim.VersionRange
@@ -25,7 +27,19 @@ local toadd = {}
 
 ---@class jvim.LoadState
 ---@field debug_file integer
-local state = {}
+local state = { debug_file = -1 }
+
+---@param message string
+local function writeln(message)
+  if state.debug_file == -1 then
+    return
+  end
+  vim.uv.fs_write(state.debug_file, ("[%s] %s\n"):format(os.date("%X"), message), nil, function(err)
+    if err then
+      jvim.error("failed to write to `debug_file`: " .. err)
+    end
+  end)
+end
 
 ---@class jvim.Plugin
 ---@field spec jvim.Spec
@@ -41,10 +55,12 @@ end
 
 ---@param ev vim.api.keyset.events|vim.api.keyset.events[]
 ---@param cb fun()
-local function on_event(ev, cb)
+---@param pattern? string|string[]
+local function on_event(ev, cb, pattern)
   vim.api.nvim_create_autocmd(ev, {
     once = true,
     callback = cb,
+    pattern = pattern,
   })
 end
 
@@ -65,23 +81,12 @@ local function on_key(keymap, cb)
   local lhs = keymap[1]
   local rhs = keymap[2]
   vim.keymap.set(mode, lhs, function()
-    print("on_key")
     vim.keymap.del(mode, lhs)
     cb()
     vim.keymap.set(mode, lhs, rhs)
     local feed = vim.api.nvim_replace_termcodes("<Ignore>" .. lhs, true, true, true)
     vim.api.nvim_feedkeys(feed, "i", false)
   end)
-end
-
----@param ft string
----@param cb fun()
-local function on_ft(ft, cb)
-  vim.api.nvim_create_autocmd("FileType", {
-    once = true,
-    pattern = ft,
-    callback = cb,
-  })
 end
 
 local function stem(name)
@@ -98,9 +103,23 @@ local function aslist(v)
 end
 
 function Plugin:setup()
+  ---@param on string
+  local function loadme(on)
+    return function()
+      self:load()
+      writeln(("Load on %s: %s"):format(on, self.spec[1]))
+    end
+  end
+
   if self.spec.lazy ~= nil then
     if not self.spec.lazy then
-      self:load()
+      -- Eager load must set keymaps too since `on_key` will not be called
+      loadme("start")()
+      if self.spec.keys then
+        for _, keymap in ipairs(self.spec.keys) do
+          vim.keymap.set(keymap.mode or "n", keymap[1], keymap[2])
+        end
+      end
     end
     return
   end
@@ -109,71 +128,32 @@ function Plugin:setup()
 
   if self.spec.event then
     scheduled = true
-
-    on_event(self.spec.event, function()
-      self:load()
-      --local message = ("Load on event(%s): %s\n"):format(self.spec.event, self.spec[1])
-      --vim.uv.fs_write(state.debug_file, message, nil, function(err)
-      --  if err then
-      --    jvim.error(err)
-      --  end
-      --end)
-    end)
+    on_event(self.spec.event, loadme(("event(%s)"):format(self.spec.event)))
   end
 
   if self.spec.cmd then
     scheduled = true
     for _, cmd in ipairs(aslist(self.spec.cmd)) do
-      on_cmd(cmd, function()
-        self:load()
-        --local message = ("Load on cmd(%s): %s\n"):format(cmd, self.spec[1])
-        --vim.uv.fs_write(state.debug_file, message, nil, function(err)
-        --  if err then
-        --    jvim.error(err)
-        --  end
-        --end)
-      end)
+      on_cmd(cmd, loadme(("cmd(%s)"):format(cmd)))
     end
   end
 
   if self.spec.keys then
     scheduled = true
     for _, keymap in ipairs(self.spec.keys) do
-      on_key(keymap, function()
-        self:load()
-        --local message = ("Load on key(%s): %s\n"):format(keymap[1], self.spec[1])
-        --vim.uv.fs_write(state.debug_file, message, nil, function(err)
-        --  if err then
-        --    jvim.error(err)
-        --  end
-        --end)
-      end)
+      on_key(keymap, loadme(("key(%s)"):format(keymap[1])))
     end
   end
 
   if self.spec.ft then
     scheduled = true
     for _, ft in ipairs(aslist(self.spec.ft)) do
-      on_ft(ft, function()
-        self:load()
-      end)
+      on_event("FileType", loadme(("ft(%s)"):format(ft)), ft)
     end
   end
 
   if not scheduled then
-    vim.api.nvim_create_autocmd("User", {
-      once = true,
-      pattern = "LazyLoad",
-      callback = function()
-        self:load()
-        --local message = ("Load on event(LazyLoad): %s\n"):format(self.spec[1])
-        --vim.uv.fs_write(state.debug_file, message, nil, function(err)
-        --  if err then
-        --    jvim.error(err)
-        --  end
-        --end)
-      end,
-    })
+    on_event("User", loadme("event(LazyLoad)"), "LazyLoad")
   end
 end
 
@@ -268,8 +248,6 @@ local function walkdir(path, cb)
   end
 end
 
-local M = {}
-
 ---@param path string
 local function import(path)
   local mod = dofile(path)
@@ -285,7 +263,7 @@ end
 
 ---@param relpath? string
 function M.setup(relpath)
-  --state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
+  state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
 
   local root = vim.fs.joinpath(vim.fn.stdpath("config"), "lua", relpath or "plugins")
   walkdir(root, import)
