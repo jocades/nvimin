@@ -1,1 +1,45 @@
-require("jvim").setup()
+_G.jvim = require("jvim.util")
+
+vim.loader.enable()
+
+local function colorscheme()
+  vim.pack.add({
+    -- Ugly colors after this commit
+    { src = "https://github.com/catppuccin/nvim", name = "catppuccin", version = "1bf0701" },
+  })
+
+  require("catppuccin").setup({
+    highlight = {
+      enable = true,
+      additional_vim_regex_highlighting = false,
+    },
+    no_italic = true,
+    show_end_of_buffer = true,
+    integrations = {
+      native_lsp = {
+        enabled = true,
+        underlines = {
+          errors = { "undercurl" },
+          hints = { "undercurl" },
+          warnings = { "undercurl" },
+          information = { "undercurl" },
+        },
+      },
+    },
+  })
+
+  vim.cmd.colorscheme("catppuccin-mocha")
+end
+
+require("config.options")
+require("config.autocmds")
+
+colorscheme()
+
+require("jvim.load").setup({ dev = "~/.config/nvim/dev" })
+
+for mode, mappings in pairs(require("config.keymaps")) do
+  for k, t in pairs(mappings) do
+    jvim.map(mode, k, t[1], t[2])
+  end
+end

@@ -189,10 +189,10 @@ function Plugin:load()
       self.spec.main = modname(name)
     end
 
-    writeln(string.format("require('%s')", self.spec.main))
+    --writeln(string.format("require('%s')", self.spec.main))
     local ok, mod = pcall(require, self.spec.main)
     if not ok then
-      writeln(string.format("require('%s')", name))
+      --writeln(string.format("require('%s')", name))
       ok, mod = pcall(require, name)
       if not ok then
         jvim.error(("Unable to resolve modname for `%s`"):format(self.spec[1]))
@@ -279,20 +279,17 @@ function M.setup(opts)
     vim.opt.rtp:append(vim.fn.expand(opts.dev))
   end
 
+
   local root = vim.fs.joinpath(vim.fn.stdpath("config"), "lua", opts.import or "plugins")
   walkdir(root, import)
 
   vim.pack.add(toadd, { load = function() end })
 
-  -- vim.print(vim.tbl_map(function(plugin)
-  --   return plugin.spec[1]
-  -- end, cache))
-
   for _, plugin in pairs(cache) do
     plugin:setup()
   end
 
-  on_event("UIEnter", function()
+  vim.schedule(function()
     vim.api.nvim_exec_autocmds("User", { pattern = "LazyLoad" })
   end)
 end

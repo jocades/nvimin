@@ -6,7 +6,7 @@ return {
     opts = {},
     keys = {
       {
-        "<C-n>",
+        "<leader>e",
         function()
           require("mini.files").open()
         end,
@@ -43,7 +43,9 @@ return {
               ["<C-k>"] = actions.move_selection_previous,
               ["<C-n>"] = actions.cycle_history_next,
               ["<C-p>"] = actions.cycle_history_prev,
-              ["<C-l>"] = require("trouble.sources.telescope").open,
+              ["<C-l>"] = function()
+                require("trouble.sources.telescope").open()
+              end,
             },
           },
           prompt_prefix = " ",

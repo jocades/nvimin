@@ -39,4 +39,63 @@ function M.warn(message)
   M.notify(message, vim.log.levels.WARN)
 end
 
+M.diagnostic = {}
+
+---@param severity? vim.diagnostic.Severity
+function M.diagnostic.open(severity)
+  return function()
+    require("trouble").open({
+      mode = "diagnostics",
+      filter = { severity = severity },
+    })
+  end
+end
+
+---@param severity? vim.diagnostic.Severity
+---@param buf? integer
+function M.diagnostic.open_buf(severity, buf)
+  return function()
+    require("trouble").open({
+      mode = "diagnostics",
+      filter = { severity = severity, buf = buf or 0 },
+    })
+  end
+end
+
+M.lsp = {}
+
+---@param from string
+---@param to string
+---@param rename? fun()
+function M.lsp.request_rename(from, to, rename)
+  local changes = {
+    files = {
+      {
+        oldUri = vim.uri_from_fname(from),
+        newUri = vim.uri_from_fname(to),
+      },
+    },
+  }
+
+  local clients = vim.lsp.get_clients()
+  for _, client in ipairs(clients) do
+    if client:supports_method("workspace/willRenameFiles") then
+      local resp = client:request_sync("workspace/willRenameFiles", changes, 1000, 0)
+      if resp and resp.result ~= nil then
+        vim.lsp.util.apply_workspace_edit(resp.result, client.offset_encoding)
+      end
+    end
+  end
+
+  if rename then
+    rename()
+  end
+
+  for _, client in ipairs(clients) do
+    if client:supports_method("workspace/didRenameFiles") then
+      client:notify("workspace/didRenameFiles", changes)
+    end
+  end
+end
+
 return M

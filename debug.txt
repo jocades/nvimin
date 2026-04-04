@@ -1,30 +1,9 @@
-[05:03:14] require('mini.files')
-[05:03:14] Load on start: nvim-mini/mini.files
-[05:03:14] Load on start: nvim-treesitter/nvim-treesitter
-[05:03:14] Load on event(LazyLoad): christoomey/vim-tmux-navigator
-[05:03:14] require('fidget')
-[05:03:14] require('mason')
-[05:03:14] Load on event(LazyLoad): neovim/nvim-lspconfig
-[05:03:14] Load on event(LazyLoad): mason-org/mason.nvim
-[05:03:14] Load on event(LazyLoad): j-hui/fidget.nvim
-[05:03:14] Load on event(LazyLoad): aznhe21/actions-preview.nvim
-[05:03:14] require('trouble')
-[05:03:14] Load on event(LazyLoad): folke/trouble.nvim
-[05:03:14] Load on event(LazyLoad): nvim-mini/mini.icons
-[05:03:16] Load on key(<C-p>): nvim-telescope/telescope.nvim
-[05:03:16] require('autopairs')
-[05:03:16] require('nvim-autopairs')
-[05:03:16] Load on event(InsertEnter): windwp/nvim-autopairs
-[05:03:16] Load on event(InsertEnter): nvim-treesitter/nvim-treesitter-textobjects
-[05:03:16] require('surround')
-[05:03:16] require('nvim-surround')
-[05:03:16] Load on event(InsertEnter): kylechui/nvim-surround
-[05:03:16] require('blink.cmp')
-[05:03:16] Load on event(InsertEnter): saghen/blink.cmp
-[05:03:16] require('ts-autotag')
-[05:03:16] require('nvim-ts-autotag')
-[05:03:16] Load on event(InsertEnter): windwp/nvim-ts-autotag
-[05:03:17] require('ibl')
-[05:03:17] Load on event(BufReadPost): lukas-reineke/indent-blankline.nvim
-[05:03:30] Load on event(BufWritePre): stevearc/conform.nvim
-[05:03:39] Load on key(<leader>x): jocades/bbuf
+[13:02:07] Load on start: nvim-mini/mini.files
+[13:02:07] Load on start: nvim-treesitter/nvim-treesitter
+[13:02:07] Load on event(LazyLoad): folke/trouble.nvim
+[13:02:07] Load on event(LazyLoad): j-hui/fidget.nvim
+[13:02:07] Load on event(LazyLoad): aznhe21/actions-preview.nvim
+[13:02:07] Load on event(LazyLoad): mason-org/mason.nvim
+[13:02:07] Load on event(LazyLoad): neovim/nvim-lspconfig
+[13:02:07] Load on event(LazyLoad): nvim-mini/mini.icons
+[13:02:14] Load on event(BufReadPost): lukas-reineke/indent-blankline.nvim

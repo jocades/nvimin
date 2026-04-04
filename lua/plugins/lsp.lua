@@ -89,7 +89,7 @@ return {
     end
 
     -- Dont write logs to file, it gets massive over time
-    --vim.lsp.log.set_level(vim.log.levels.OFF)
+    vim.lsp.log.set_level(vim.log.levels.WARN)
 
     vim.diagnostic.config({
       underline = true,
@@ -104,12 +104,17 @@ return {
       severity_sort = true,
     })
 
-    local function jump(count, severity)
+    local severity = vim.diagnostic.severity
+
+    jvim.nmap({
+      { "<leader>di", jvim.diagnostic.open(), "Diagnostics" },
+      { "<leader>de", jvim.diagnostic.open(severity.ERROR), "Diagnostics (error)" },
+      { "<leader>dc", jvim.diagnostic.open_buf(), "Diagnostics (current buf)" },
+    })
+
+    local function jump(count, sev)
       return function()
-        vim.diagnostic.jump({
-          count = count,
-          severity = severity,
-        })
+        vim.diagnostic.jump({ count = count, severity = sev })
       end
     end
 
@@ -125,23 +130,24 @@ return {
           { "gI", vim.lsp.buf.implementation, "Goto Implementation" },
           { "]d", jump(1), "Goto Next Diagnostic" },
           { "[d", jump(-1), "Goto Previous Diagnostic" },
-          { "]i", jump(1, vim.diagnostic.severity.INFO), "Goto Next Info" },
-          { "[i", jump(-1, vim.diagnostic.severity.INFO), "Goto Previous Info" },
-          { "]e", jump(1, vim.diagnostic.severity.ERROR), "Goto Next Error" },
-          { "[e", jump(-1, vim.diagnostic.severity.ERROR), "Goto Previous Error" },
-          { "]w", jump(1, vim.diagnostic.severity.WARN), "Goto Next Warning" },
-          { "[w", jump(-1, vim.diagnostic.severity.WARN), "Goto Previous Warning" },
-
-          -- Diagnostics
-          --{ "<leader>di", JVim.diagnostic.open(), "Diagnostics" },
-          --{ "<leader>de", JVim.diagnostic.open("ERROR"), "Diagnostics (error)" },
-          --{ "<leader>dc", JVim.diagnostic.open_buf(), "Diagnostics (current buf)" },
+          { "]i", jump(1, severity.INFO), "Goto Next Info" },
+          { "[i", jump(-1, severity.INFO), "Goto Previous Info" },
+          { "]e", jump(1, severity.ERROR), "Goto Next Error" },
+          { "[e", jump(-1, severity.ERROR), "Goto Previous Error" },
+          { "]w", jump(1, severity.WARN), "Goto Next Warning" },
+          { "[w", jump(-1, severity.WARN), "Goto Previous Warning" },
 
           -- Actions
           { "K", vim.lsp.buf.hover, "Hover Documentation" },
           { "<leader>k", vim.diagnostic.open_float, "Open diagnostic float" },
-          { "<leader>ca", require("actions-preview").code_actions, "Code Action" },
           { "<leader>rn", vim.lsp.buf.rename, "Rename" },
+          {
+            "<leader>ca",
+            function()
+              require("actions-preview").code_actions()
+            end,
+            "Code Action",
+          },
         }, function(opts)
           ---@diagnostic disable-next-line: inject-field
           opts.buffer = ev.buf

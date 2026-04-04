@@ -6,7 +6,7 @@ return {
   },
 
   {
-    "kylechui/nvim-surround",
+    "nvim-mini/mini.surround",
     event = "InsertEnter",
     opts = {},
   },
