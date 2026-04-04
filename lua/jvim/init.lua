@@ -39,7 +39,7 @@ function M.setup()
 
   colorscheme()
 
-  require("jvim.load").setup()
+  require("jvim.load").setup({ dev = "~/.config/nvim/dev" })
 
   for mode, mappings in pairs(require("config.keymaps")) do
     for k, t in pairs(mappings) do

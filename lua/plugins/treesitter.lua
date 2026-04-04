@@ -3,7 +3,7 @@ return {
     "nvim-treesitter/nvim-treesitter",
     lazy = false,
     config = function()
-      require("nvim-treesitter").install({
+      local langs = {
         "c",
         "bash",
         "css",
@@ -26,6 +26,22 @@ return {
         "vimdoc",
         "xml",
         "yaml",
+      }
+
+      require("nvim-treesitter").install(langs)
+
+      local fts = {}
+      for _, lang in ipairs(langs) do
+        for _, ft in ipairs(vim.treesitter.language.get_filetypes(lang)) do
+          table.insert(fts, ft)
+        end
+      end
+
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = fts,
+        callback = function(ev)
+          vim.treesitter.start(ev.buf)
+        end,
       })
     end,
   },

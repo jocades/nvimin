@@ -6,6 +6,7 @@ local M = {}
 ---@field main? string
 ---@field lazy? boolean
 ---@field deps? (string|jvim.Spec)[]
+---@field dev? boolean
 ---@field keys? jvim.KeySpec[]
 ---@field event? vim.api.keyset.events|vim.api.keyset.events[]
 ---@field cmd? string|string[]
@@ -177,7 +178,9 @@ function Plugin:load()
   end
 
   local name = stem(self.spec[1])
-  vim.cmd.packadd(name)
+  if not self.spec.dev then
+    vim.cmd.packadd(name)
+  end
 
   if self.spec.config then
     self.spec.config(self:opts() or {})
@@ -186,8 +189,10 @@ function Plugin:load()
       self.spec.main = modname(name)
     end
 
+    writeln(string.format("require('%s')", self.spec.main))
     local ok, mod = pcall(require, self.spec.main)
     if not ok then
+      writeln(string.format("require('%s')", name))
       ok, mod = pcall(require, name)
       if not ok then
         jvim.error(("Unable to resolve modname for `%s`"):format(self.spec[1]))
@@ -221,10 +226,13 @@ local function add(specs)
     end
 
     cache[name] = Plugin.new(spec)
-    table.insert(toadd, {
-      src = "https://github.com/" .. name,
-      version = spec.version,
-    })
+
+    if not spec.dev then
+      table.insert(toadd, {
+        src = "https://github.com/" .. name,
+        version = spec.version,
+      })
+    end
   end
 end
 
@@ -254,21 +262,31 @@ local function import(path)
   if not mod then
     return
   end
-  if type(mod[1]) == "table" then -- spec list
-    add(mod)
-  else -- single spec
-    add({ mod })
-  end
+  add(vim.islist(mod) and mod or { mod })
 end
 
----@param relpath? string
-function M.setup(relpath)
+---@class jvim.LoadConfig
+---@field import? string Relative path to `plugins` directory
+---@field dev? string Path to be added to neovim's runtime.
+
+---@param opts? jvim.LoadConfig
+function M.setup(opts)
+  opts = opts or {}
+
   state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
 
-  local root = vim.fs.joinpath(vim.fn.stdpath("config"), "lua", relpath or "plugins")
+  if opts.dev then
+    vim.opt.rtp:append(vim.fn.expand(opts.dev))
+  end
+
+  local root = vim.fs.joinpath(vim.fn.stdpath("config"), "lua", opts.import or "plugins")
   walkdir(root, import)
 
   vim.pack.add(toadd, { load = function() end })
+
+  -- vim.print(vim.tbl_map(function(plugin)
+  --   return plugin.spec[1]
+  -- end, cache))
 
   for _, plugin in pairs(cache) do
     plugin:setup()

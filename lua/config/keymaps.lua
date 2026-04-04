@@ -1,11 +1,9 @@
 return {
   n = {
-    --["<leader>x"] = { JVim.buf.remove, "Close buffer" },
     ["<leader>X"] = { vim.cmd.tabc, "Close tab" },
     ["<leader>y"] = { "<cmd>%y+<cr>", "Copy buffer" },
     ["<leader>v"] = { "gg0vG$", "Select buffer" },
     ["<leader>so"] = { "<cmd>w | so %<cr>", "Save and source buffer" },
-    --["<leader>nf"] = { JVim.buf.new, "New buffer" },
 
     -- Windows
     ["<leader>ss"] = { vim.cmd.vsplit, "Vertical split" },
