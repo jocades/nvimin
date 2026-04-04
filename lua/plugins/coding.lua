@@ -12,9 +12,19 @@ return {
   },
 
   {
+    "windwp/nvim-ts-autotag",
+    event = "InsertEnter",
+    opts = {},
+  },
+
+  {
     "folke/lazydev.nvim",
     ft = "lua",
-    opts = {},
+    opts = {
+      library = {
+        { path = "snacks.nvim", words = { "Snacks" } },
+      },
+    },
   },
 
   {
@@ -42,11 +52,6 @@ return {
         },
       },
     },
-  },
-
-  {
-    "folke/trouble.nvim",
-    opts = { auto_preview = false },
   },
 
   {

@@ -4,8 +4,8 @@ return {
     lazy = false,
     config = function()
       local langs = {
-        "c",
         "bash",
+        "c",
         "css",
         "diff",
         "elixir",
@@ -17,6 +17,7 @@ return {
         "lua",
         "markdown",
         "markdown_inline",
+        "nix",
         "python",
         "rust",
         "toml",
@@ -44,12 +45,6 @@ return {
         end,
       })
     end,
-  },
-
-  {
-    "windwp/nvim-ts-autotag",
-    event = "InsertEnter",
-    opts = {},
   },
 
   {

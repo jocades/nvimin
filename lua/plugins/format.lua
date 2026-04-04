@@ -1,6 +1,5 @@
 return {
   "stevearc/conform.nvim",
-  event = "BufWritePre",
   opts = {
     format_on_save = function(buf)
       if vim.g.disable_autoformat or vim.b[buf].disable_autoformat then

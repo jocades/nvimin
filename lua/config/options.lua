@@ -6,7 +6,6 @@ vim.g.maplocalleader = " "
 vim.g.bigfile_size = 1024 * 1024 * 1.5 -- 1.5 MB
 
 local opts = {
-  clipboard = "unnamedplus", -- allows neovim to access the system clipboard
   mouse = "a", -- enable mouse mode
   incsearch = true, -- highlit while search
   hlsearch = true, -- highlight on search
@@ -57,8 +56,14 @@ local opts = {
   conceallevel = 2, -- Hide text
   concealcursor = "", -- Expand hidden text when cursor in concealed text
   winborder = "single", -- Bordered windows
+  --confirm = true,
 }
 
 for k, v in pairs(opts) do
   vim.opt[k] = v
 end
+
+-- allows neovim to access the system clipboard
+vim.schedule(function()
+  vim.opt.clipboard = "unnamedplus"
+end)

@@ -1,6 +1,6 @@
-_G.jvim = require("jvim.util")
-
 vim.loader.enable()
+
+_G.jvim = require("jvim.util")
 
 local function colorscheme()
   vim.pack.add({

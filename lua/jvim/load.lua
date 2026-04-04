@@ -17,6 +17,7 @@ local M = {}
 ---@class jvim.KeySpec
 ---@field [1] string
 ---@field [2] string|fun()
+---@field [3]? string Same as desc
 ---@field desc? string
 ---@field mode? string|string[]
 
@@ -76,15 +77,19 @@ local function on_cmd(cmd, cb)
 end
 
 ---@param keymap jvim.KeySpec
+local function set_keymap(keymap)
+  vim.keymap.set(keymap.mode or "n", keymap[1], keymap[2], { desc = keymap[3] or keymap.desc })
+end
+
+---@param keymap jvim.KeySpec
 ---@param cb fun()
 local function on_key(keymap, cb)
   local mode = keymap.mode or "n"
   local lhs = keymap[1]
-  local rhs = keymap[2]
   vim.keymap.set(mode, lhs, function()
     vim.keymap.del(mode, lhs)
     cb()
-    vim.keymap.set(mode, lhs, rhs)
+    set_keymap(keymap)
     local feed = vim.api.nvim_replace_termcodes("<Ignore>" .. lhs, true, true, true)
     vim.api.nvim_feedkeys(feed, "i", false)
   end)
@@ -118,7 +123,7 @@ function Plugin:setup()
       loadme("start")()
       if self.spec.keys then
         for _, keymap in ipairs(self.spec.keys) do
-          vim.keymap.set(keymap.mode or "n", keymap[1], keymap[2])
+          set_keymap(keymap)
         end
       end
     end
@@ -273,12 +278,11 @@ end
 function M.setup(opts)
   opts = opts or {}
 
-  state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
+  --state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
 
   if opts.dev then
     vim.opt.rtp:append(vim.fn.expand(opts.dev))
   end
-
 
   local root = vim.fs.joinpath(vim.fn.stdpath("config"), "lua", opts.import or "plugins")
   walkdir(root, import)

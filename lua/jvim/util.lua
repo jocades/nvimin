@@ -39,6 +39,29 @@ function M.warn(message)
   M.notify(message, vim.log.levels.WARN)
 end
 
+M.toggle = {}
+
+function M.toggle.autoformat()
+  vim.g.disable_autoformat = not vim.g.disable_autoformat
+  jvim.notify(("toggle(autoformat) = %s"):format(vim.g.disable_autoformat))
+end
+
+function M.toggle.diagnostics()
+  local enable = not vim.diagnostic.is_enabled()
+  vim.diagnostic.enable(enable)
+  jvim.notify(("toggle(diagnostics) = %s"):format(enable))
+end
+
+function M.toggle.inlay_hints()
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+end
+
+function M.toggle.hlsearch()
+  if vim.opt.hlsearch:get() then
+    vim.cmd.nohlsearch()
+  end
+end
+
 M.diagnostic = {}
 
 ---@param severity? vim.diagnostic.Severity

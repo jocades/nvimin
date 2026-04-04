@@ -10,6 +10,12 @@ return {
     ["<leader>sh"] = { vim.cmd.split, "Horizontal split" },
     ["<leader>z"] = { vim.cmd.close, "Close window" },
 
+    -- Toggle
+    ["<Esc>"] = { jvim.toggle.hlsearch, "Toggle hlsearch" },
+    ["<leader>td"] = { jvim.toggle.diagnostics, "Toggle diagnostics" },
+    ["<leader>th"] = { jvim.toggle.inlay_hints, "Toggle inlay hints" },
+    ["<leader>tf"] = { jvim.toggle.autoformat, "Toggle autoformat" },
+
     -- Centralization
     ["<C-d>"] = { "<C-d>zz" },
     ["<C-u>"] = { "<C-u>zz" },

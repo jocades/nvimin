@@ -13,9 +13,7 @@ return {
         settings = {
           Lua = {
             version = "LuaJIT",
-            workspace = {
-              checkThirdParty = false,
-            },
+            workspace = { checkThirdParty = false },
             codeLens = { enable = true },
             hint = { enable = true },
           },
@@ -121,10 +119,11 @@ return {
     vim.api.nvim_create_autocmd("LspAttach", {
       callback = function(ev)
         --local client = vim.lsp.get_client_by_id(ev.data.client_id)
+        -- stylua: ignore
         jvim.nmap({
           -- Movement
           { "gd", vim.lsp.buf.definition, "Goto Definition" },
-          { "gr", "<cmd>Telescope lsp_references<cr>", "Goto References" },
+          { "gr", function() Snacks.picker.lsp_references() end, "Goto References" },
           { "gD", vim.lsp.buf.declaration, "Goto Declaration" },
           { "gtd", vim.lsp.buf.type_definition, "Type Definition" },
           { "gI", vim.lsp.buf.implementation, "Goto Implementation" },
@@ -141,8 +140,7 @@ return {
           { "K", vim.lsp.buf.hover, "Hover Documentation" },
           { "<leader>k", vim.diagnostic.open_float, "Open diagnostic float" },
           { "<leader>rn", vim.lsp.buf.rename, "Rename" },
-          {
-            "<leader>ca",
+          { "<leader>ca",
             function()
               require("actions-preview").code_actions()
             end,
