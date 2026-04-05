@@ -7,10 +7,10 @@ local M = {}
 ---@field lazy? boolean
 ---@field deps? (string|jvim.Spec)[]
 ---@field dev? boolean
----@field keys? jvim.KeySpec[]
 ---@field event? vim.api.keyset.events|vim.api.keyset.events[]
----@field cmd? string|string[]
----@field ft? string|string[]
+---@field cmd? string|string[]|fun():string|string[]
+---@field ft? string|string[]|fun():string|string[]
+---@field keys? jvim.KeySpec[]|fun():jvim.KeySpec[]
 ---@field opts? table|fun():table?
 ---@field config? fun(opts: table)
 
@@ -27,8 +27,6 @@ local cache = {}
 ---@type vim.pack.Spec[]
 local toadd = {}
 
----@class jvim.LoadState
----@field debug_file integer
 local state = { debug_file = -1 }
 
 ---@param message string
@@ -45,12 +43,17 @@ end
 
 ---@class jvim.Plugin
 ---@field spec jvim.Spec
+---@field parent? jvim.Plugin
 ---@field loaded boolean
 local Plugin = {}
+Plugin.__index = Plugin
 
-function Plugin.new(spec)
-  local self = setmetatable({}, { __index = Plugin })
+---@param spec jvim.Spec
+---@param parent? jvim.Plugin
+function Plugin.new(spec, parent)
+  local self = setmetatable({}, Plugin)
   self.spec = spec
+  self.parent = parent
   self.loaded = false
   return self
 end
@@ -120,12 +123,14 @@ function Plugin:setup()
     end
   end
 
+  self:resolve()
+
   if self.spec.lazy ~= nil then
     if not self.spec.lazy then
       -- Eager load must set keymaps too since `on_key` will not be called
       loadme("start")()
       if self.spec.keys then
-        for _, keymap in ipairs(self.spec.keys) do
+        for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
           set_keymap(keymap)
         end
       end
@@ -142,21 +147,21 @@ function Plugin:setup()
 
   if self.spec.cmd then
     scheduled = true
-    for _, cmd in ipairs(aslist(self.spec.cmd)) do
+    for _, cmd in ipairs(aslist(self.spec.cmd)) do ---@diagnostic disable-line: param-type-mismatch
       on_cmd(cmd, loadme(("cmd(%s)"):format(cmd)))
     end
   end
 
   if self.spec.keys then
     scheduled = true
-    for _, keymap in ipairs(self.spec.keys) do
+    for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
       on_key(keymap, loadme(("key(%s)"):format(keymap[1])))
     end
   end
 
   if self.spec.ft then
     scheduled = true
-    for _, ft in ipairs(aslist(self.spec.ft)) do
+    for _, ft in ipairs(aslist(self.spec.ft)) do ---@diagnostic disable-line: param-type-mismatch
       on_event("FileType", loadme(("ft(%s)"):format(ft)), ft)
     end
   end
@@ -166,12 +171,69 @@ function Plugin:setup()
   end
 end
 
----@return table?
-function Plugin:opts()
-  if type(self.spec.opts) == "function" then
-    return self.spec.opts()
+---@generic T
+---@param f T | fun(...): T
+---@return T
+local function ocall(f, ...)
+  if vim.is_callable(f) then
+    return f(...)
   end
-  return self.spec.opts --[[@as table]]
+  return f
+end
+
+---Merge two tables recursively, modifying `dst`.
+---@param dst table
+---@param src table
+---@param keep? boolean
+local function merge(dst, src, keep)
+  for k, v in pairs(src) do
+    local existing = dst[k]
+    if type(v) == "table" then
+      if not existing then
+        dst[k] = {}
+      end
+      merge(dst[k], v, keep)
+    else
+      if not existing or (existing and not keep) then
+        dst[k] = v
+      end
+    end
+  end
+end
+
+local merge_keys = { "deps", "event", "cmd", "ft", "keys", "opts", "config" }
+
+function Plugin:resolve()
+  -- resolve function values
+  for k, v in pairs(self.spec) do
+    if k ~= "config" and vim.is_callable(v) then
+      self.spec[k] = v()
+    end
+  end
+
+  -- merge spec with parents
+  local parent = self.parent
+  while parent do
+    for _, k in ipairs(merge_keys) do
+      if parent.spec[k] then
+        if k == "config" and self.spec[k] then
+          jvim.warn("Multiple `config` fields defined for plugin `%s` " .. parent.spec[1])
+          self.spec[k] = parent.spec[k]
+        else
+          if not self.spec[k] then
+            self.spec[k] = {}
+          end
+          local src = ocall(parent.spec[k])
+          if k == "opts" then
+            merge(self.spec[k], src, true)
+          else
+            vim.list_extend(self.spec[k], src)
+          end
+        end
+      end
+    end
+    parent = parent.parent
+  end
 end
 
 function Plugin:load()
@@ -191,16 +253,14 @@ function Plugin:load()
   end
 
   if self.spec.config then
-    self.spec.config(self:opts() or {})
+    self.spec.config(self.spec.opts) ---@diagnostic disable-line: param-type-mismatch
   elseif self.spec.opts then
     if not self.spec.main then
       self.spec.main = modname(name)
     end
 
-    --writeln(string.format("require('%s')", self.spec.main))
     local ok, mod = pcall(require, self.spec.main)
     if not ok then
-      --writeln(string.format("require('%s')", name))
       ok, mod = pcall(require, name)
       if not ok then
         jvim.error(("Unable to resolve modname for `%s`"):format(self.spec[1]))
@@ -226,22 +286,26 @@ local function add(specs)
     end
 
     local name = spec[1]
-    local existing = cache[name]
+    local parent = cache[name]
 
-    if existing then
-      existing.spec = vim.tbl_deep_extend("force", existing.spec, spec)
-      return
-    end
+    cache[name] = Plugin.new(spec, parent)
 
-    cache[name] = Plugin.new(spec)
-
-    if not spec.dev then
+    if not spec.dev and not parent then
       table.insert(toadd, {
         src = "https://github.com/" .. name,
         version = spec.version,
       })
     end
   end
+end
+
+---@param path string
+local function import(path)
+  local mod = dofile(path)
+  if not mod then
+    return
+  end
+  add(vim.islist(mod) and mod or { mod })
 end
 
 ---Recursive `WalkDir` depth first.
@@ -264,15 +328,6 @@ local function walkdir(path, cb)
   end
 end
 
----@param path string
-local function import(path)
-  local mod = dofile(path)
-  if not mod then
-    return
-  end
-  add(vim.islist(mod) and mod or { mod })
-end
-
 ---@class jvim.LoadConfig
 ---@field import? string Relative path to `plugins` directory
 ---@field dev? string Path to be added to neovim's runtime.
@@ -281,7 +336,9 @@ end
 function M.setup(opts)
   opts = opts or {}
 
-  --state.debug_file = assert(vim.uv.fs_open("debug.txt", "w", tonumber("644", 8)))
+  if vim.env.DEBUG_LOAD then
+    state.debug_file = assert(vim.uv.fs_open("debug.load", "w", tonumber("644", 8)))
+  end
 
   if opts.dev then
     vim.opt.rtp:append(vim.fn.expand(opts.dev))

@@ -7,10 +7,6 @@ _G.Laser = setmetatable({}, {
   end,
 })
 
-local function dbg(msg)
-  Snacks.notifier.notify(msg)
-end
-
 local M = {}
 
 ---@class laser.Config
@@ -78,19 +74,27 @@ function M.add()
 end
 
 ---@param index number
----@param mode? "vertical"|"horizontal"
-function M.select(index, mode)
+---@param opts? {split: boolean, vsplit: boolean}
+function M.select(index, opts)
   local relpath = state.items[index]
   if not relpath then
     return
   end
-  if mode == "vertical" then
-    vim.cmd.vsplit(relpath)
-  elseif mode == "horizontal" then
-    vim.cmd.split(relpath)
-  else
-    vim.cmd.edit(relpath)
+
+  local buf = vim.fn.bufadd(relpath)
+  if not vim.api.nvim_buf_is_loaded(buf) then
+    vim.fn.bufload(buf)
   end
+
+  if opts then
+    if opts.split then
+      vim.cmd.split()
+    elseif opts.vsplit then
+      vim.cmd.vsplit()
+    end
+  end
+
+  vim.api.nvim_set_current_buf(buf)
 end
 
 local function create_window()
@@ -113,21 +117,22 @@ local function create_window()
         "<C-v>",
         function(self)
           local index = self:get_cursor()
-          M.select(index, "vertical")
+          M.select(index, { vsplit = true })
         end,
       },
       {
         "<C-h>",
         function(self)
           local index = self:get_cursor()
-          M.select(index, "horizontal")
+          M.select(index, { split = true })
         end,
       },
     },
 
     on_buf = function(self)
+      vim.bo[self.buf].ft = "laser"
+
       self:on("BufLeave", function()
-        dbg("BufLeave")
         local clean = {}
         for _, line in ipairs(self:get_lines()) do
           if vim.trim(line) ~= "" then
@@ -153,9 +158,7 @@ end
 
 ---@param opts? laser.Config
 function M.setup(opts)
-  if opts then
-    merge(config, opts)
-  end
+  merge(config, opts or {})
   vim.fn.mkdir(config.root, "p")
   create_window()
   M.load()
@@ -165,21 +168,5 @@ function M.setup(opts)
     end,
   })
 end
-
-vim.keymap.set("n", "<leader>h", function()
-  M.toggle()
-end)
-
-vim.keymap.set("n", "<leader>H", function()
-  M.add()
-end)
-
-for i = 1, 5 do
-  vim.keymap.set("n", "<leader>" .. i, function()
-    M.select(i)
-  end)
-end
-
-M.setup()
 
 return M

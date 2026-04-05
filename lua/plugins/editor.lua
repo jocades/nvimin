@@ -67,9 +67,24 @@ return {
     },
   },
 
-  -- {
-  --   "jocades/laser",
-  --   dev = true,
-  --   -- stylua: ignore
-  -- },
+  {
+    "jocades/laser",
+    dev = true,
+    opts = {},
+    keys = function()
+      -- stylua: ignore start
+      local keys = {
+        { "<leader>h", function() require("laser").toggle() end, "Laser toggle" },
+        { "<leader>a", function() require("laser").add() end, "Laser add" },
+      }
+      for i = 1, 5 do
+        table.insert(keys, {
+          "<leader>" .. i,
+          function() require("laser").select(i) end,
+          desc = "Laser file " .. i,
+        })
+      end
+      return keys
+    end,
+  },
 }

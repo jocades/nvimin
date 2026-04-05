@@ -1,7 +1,3 @@
-local function dbg(msg)
-  Snacks.notifier.notify(msg)
-end
-
 ---@class laser.Window
 ---@field id number
 ---@field buf number
@@ -65,10 +61,8 @@ function Window:show()
   end
 
   if not self:buf_valid() then
-    dbg("new buf")
     self.buf = vim.api.nvim_create_buf(false, true)
     if self.opts.keys then
-      dbg("set keys")
       for _, map in ipairs(self.opts.keys) do
         local rhs = vim.is_callable(map[2]) and self:_wrap(map[2]) or map[2]
         vim.keymap.set(map.mode or "n", map[1], rhs, { buf = self.buf })
