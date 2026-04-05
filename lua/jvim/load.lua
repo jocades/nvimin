@@ -55,12 +55,15 @@ function Plugin.new(spec)
   return self
 end
 
+local augroup = vim.api.nvim_create_augroup("jvim.load", { clear = true })
+
 ---@param ev vim.api.keyset.events|vim.api.keyset.events[]
 ---@param cb fun()
 ---@param pattern? string|string[]
 local function on_event(ev, cb, pattern)
   vim.api.nvim_create_autocmd(ev, {
     once = true,
+    group = augroup,
     callback = cb,
     pattern = pattern,
   })
