@@ -39,6 +39,7 @@ return {
       end
 
       vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("treesitter-start-on-ft", { clear = true }),
         pattern = fts,
         callback = function(ev)
           vim.treesitter.start(ev.buf)

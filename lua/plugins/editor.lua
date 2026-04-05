@@ -25,7 +25,7 @@ return {
     },
     -- stylua: ignore
     keys = {
-      { "<C-p>", function() Snacks.picker.files() end, "Find help" },
+      { "<C-p>", function() Snacks.picker.files() end, "Find files" },
       { "<leader>fp", function() Snacks.picker.pickers() end, "Find pickers" },
       { "<leader>fw", function() Snacks.picker.grep() end, "Find word (grep)" },
       { "<leader>fc", function() Snacks.picker.grep_word() end, "Find word under cursor (grep)" },
@@ -67,9 +67,9 @@ return {
     },
   },
 
-  {
-    "jocades/laser",
-    dev = true,
-    -- stylua: ignore
-  },
+  -- {
+  --   "jocades/laser",
+  --   dev = true,
+  --   -- stylua: ignore
+  -- },
 }
