@@ -2,7 +2,7 @@ return {
   {
     "nvim-mini/mini.files",
     lazy = false,
-    deps = { "nvim-mini/mini.icons" },
+    deps = { { "nvim-mini/mini.icons", opts = {} } },
     opts = {},
     -- stylua: ignore
     keys = {
@@ -20,7 +20,9 @@ return {
     "folke/snacks.nvim",
     lazy = false,
     opts = {
-      picker = {},
+      picker = {
+        layout = { preset = "default", layout = { backdrop = false } },
+      },
       scratch = {},
     },
     -- stylua: ignore
@@ -80,8 +82,8 @@ return {
       for i = 1, 5 do
         table.insert(keys, {
           "<leader>" .. i,
-          function() require("laser").select(i) end,
-          desc = "Laser file " .. i,
+          function() require("laser").jump(i) end,
+          "Laser file " .. i,
         })
       end
       return keys

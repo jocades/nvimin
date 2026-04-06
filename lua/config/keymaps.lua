@@ -1,5 +1,6 @@
 return {
   n = {
+    -- Buffers
     ["<leader>X"] = { vim.cmd.tabc, "Close tab" },
     ["<leader>y"] = { "<cmd>%y+<cr>", "Copy buffer" },
     ["<leader>v"] = { "gg0vG$", "Select buffer" },
@@ -11,7 +12,7 @@ return {
     ["<leader>z"] = { vim.cmd.close, "Close window" },
 
     -- Toggle
-    ["<Esc>"] = { jvim.toggle.hlsearch, "Toggle hlsearch" },
+    ["<esc>"] = { jvim.toggle.hlsearch, "Toggle hlsearch" },
     ["<leader>td"] = { jvim.toggle.diagnostics, "Toggle diagnostics" },
     ["<leader>th"] = { jvim.toggle.inlay_hints, "Toggle inlay hints" },
     ["<leader>tf"] = { jvim.toggle.autoformat, "Toggle autoformat" },

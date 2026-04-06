@@ -63,22 +63,7 @@ return {
       -- Nim
       nim_langserver = {},
       -- TypeScript
-      ts_ls = {
-        single_file_support = true,
-        settings = {
-          typescript = {
-            inlayHints = {
-              includeInlayEnumMemberValueHints = true,
-              includeInlayFunctionLikeReturnTypeHints = true,
-              includeInlayFunctionParameterTypeHints = true,
-              includeInlayParameterNameHints = "all", -- 'none' | 'literals' | 'all';
-              includeInlayParameterNameHintsWhenArgumentMatchesName = true,
-              includeInlayPropertyDeclarationTypeHints = true,
-              includeInlayVariableTypeHints = false,
-            },
-          },
-        },
-      },
+      tsgo = {},
     }
 
     for server, config in pairs(servers) do

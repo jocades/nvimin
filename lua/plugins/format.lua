@@ -36,7 +36,7 @@ return {
     fmt.rustfmt = { prepend_args = { "--config", "max_width=100" } }
     fmt.shfmt = { prepend_args = { "-i", "4" } }
 
-    if vim.uv.fs_stat(vim.fs.joinpath(vim.uv.cwd(), ".prettierrc")) then
+    if not vim.uv.fs_stat(vim.fs.joinpath(vim.uv.cwd(), ".prettierrc")) then
       fmt.prettier = { prepend_args = { "--semi=false", "--print-width=100", "--end-of-line=lf" } }
     end
   end,

@@ -51,7 +51,7 @@ local opts = {
   pumheight = 10, -- pop up menu height
   completeopt = { "menuone", "noselect" }, -- set completeopt to have a better completion
   fillchars = { eob = "~" },
-  showmode = false,
+  showmode = true, -- wether to show current mode
   colorcolumn = "100", -- Line length marker (ruler)
   conceallevel = 2, -- Hide text
   concealcursor = "", -- Expand hidden text when cursor in concealed text

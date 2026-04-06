@@ -51,6 +51,7 @@ return {
           },
         },
       },
+      signature = { enabled = true },
     },
   },
 

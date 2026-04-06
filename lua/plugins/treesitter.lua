@@ -16,7 +16,7 @@ return {
         "json5",
         "lua",
         "markdown",
-        "markdown_inline",
+        --"markdown_inline",
         "nix",
         "python",
         "rust",
@@ -27,6 +27,8 @@ return {
         "vimdoc",
         "xml",
         "yaml",
+        "go",
+        "ocaml",
       }
 
       require("nvim-treesitter").install(langs)
