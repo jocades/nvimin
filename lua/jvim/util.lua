@@ -48,21 +48,64 @@ function M.warn(message)
   M.notify(message, vim.log.levels.WARN)
 end
 
-M.toggle = {}
+---Optional call (type narrowing is kind of cursed in lua_ls, needs manual @cast at call site)
+---@generic T
+---@param x T | fun(...): T
+---@return T
+function M.ocall(x, ...)
+  if vim.is_callable(x) then
+    return x(...)
+  end
+  return x
+end
+
+---@class jvim.toggle.Opts
+---@field name string
+---@field get boolean|(fun():boolean)
+---@field set fun(state:boolean)}
+
+---@param opts jvim.toggle.Opts
+local function toggle(opts)
+  local state = not M.ocall(opts.get) ---@cast state boolean
+  opts.set(state)
+  M.notify(
+    (state and "Enabled" or "Disabled") .. " **" .. opts.name .. "**",
+    state and vim.log.levels.INFO or vim.log.levels.WARN
+  )
+end
+
+---@class jvim.toggle
+---@overload fun(opts: jvim.toggle.Opts)
+M.toggle = setmetatable({}, {
+  __call = function(_, ...)
+    toggle(...)
+  end,
+})
 
 function M.toggle.autoformat()
-  vim.g.disable_autoformat = not vim.g.disable_autoformat
-  jvim.notify(("toggle(autoformat) = %s"):format(vim.g.disable_autoformat))
+  toggle({
+    name = "autoformat",
+    get = vim.g.autoformat,
+    set = function(state)
+      vim.g.autoformat = state
+    end,
+  })
 end
 
 function M.toggle.diagnostics()
-  local enable = not vim.diagnostic.is_enabled()
-  vim.diagnostic.enable(enable)
-  jvim.notify(("toggle(diagnostics) = %s"):format(enable))
+  toggle({
+    name = "diagnostics",
+    get = vim.diagnostic.is_enabled,
+    set = vim.diagnostic.enable,
+  })
 end
 
 function M.toggle.inlay_hints()
-  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+  toggle({
+    name = "inlay hints",
+    get = vim.lsp.inlay_hint.is_enabled,
+    set = vim.lsp.inlay_hint.enable,
+  })
 end
 
 function M.toggle.hlsearch()

@@ -41,23 +41,41 @@ local win = Window.new({
   end,
 })
 
-vim.keymap.set("n", "<leader>h", function()
-  win:toggle()
-end)
+-- vim.keymap.set("n", "<leader>h", function()
+--   win:toggle()
+-- end)
+--
+-- local w = Snacks.win.new({
+--   show = false,
+--   keys = {
+--     ["<Esc>"] = function(self)
+--       self:hide()
+--     end,
+--   },
+--   on_buf = function(self)
+--     dbg("on_buf()")
+--   end,
+--   backdrop = false,
+-- })
+--
+-- vim.keymap.set("n", "<leader>w", function()
+--   w:show()
+-- end)
 
-local w = Snacks.win.new({
-  show = false,
-  keys = {
-    ["<Esc>"] = function(self)
-      self:hide()
-    end,
-  },
-  on_buf = function(self)
-    dbg("on_buf()")
-  end,
-  backdrop = false,
+local buf = vim.api.nvim_create_buf(false, true)
+
+local width = math.floor(vim.o.columns * 0.5)
+local height = math.floor(vim.o.lines * 0.5)
+local win = vim.api.nvim_open_win(buf, true, {
+  title = "Title!",
+  title_pos = "center",
+  relative = "editor",
+  style = "minimal",
+  width = width,
+  height = height,
+  row = math.floor((vim.o.lines - height) / 2),
+  col = math.floor((vim.o.columns - width) / 2),
 })
 
-vim.keymap.set("n", "<leader>w", function()
-  w:show()
-end)
+vim.wo[win].winhighlight = "Normal:Normal"
+--vim.api.nvim_set_hl(0, "Normal", { link = "Normal" })

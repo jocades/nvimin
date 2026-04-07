@@ -43,6 +43,88 @@ return {
   },
 
   {
+    "lewis6991/gitsigns.nvim",
+    opts = function()
+      local signs = {
+        add = { text = "▎" },
+        change = { text = "▎" },
+        delete = { text = "" },
+        topdelete = { text = "" },
+        changedelete = { text = "▎" },
+        untracked = { text = "▎" },
+      }
+
+      return {
+        signs = signs,
+        signs_staged = signs,
+        on_attach = function(buf)
+          local gs = require("gitsigns")
+          jvim.nmap({
+            {
+              "]h",
+              function()
+                if vim.wo.diff then
+                  vim.cmd.normal({ "]c", bang = true })
+                else
+                  gs.nav_hunk("next")
+                end
+              end,
+              "Next hunk",
+            },
+            {
+              "[h",
+              function()
+                if vim.wo.diff then
+                  vim.cmd.normal({ "[c", bang = true })
+                else
+                  gs.nav_hunk("prev")
+                end
+              end,
+              "Prev hunk",
+            },
+            { -- Diff current file in new tab
+              "<leader>gd",
+              function()
+                vim.cmd.tabnew(vim.api.nvim_buf_get_name(0))
+                gs.diffthis("~")
+              end,
+              "diff",
+            },
+            { "<leader>ghp", gs.preview_hunk_inline, "Preview Hunk Inline" },
+            { "<leader>ghP", gs.preview_hunk, "Preview Hunk" },
+            {
+              "<leader>gb",
+              function()
+                gs.blame_line({ full = true })
+              end,
+              "Blame Line",
+            },
+            { "<leader>gB", gs.blame, "Blame Buffer" },
+            {
+              "<leader>tg",
+              function()
+                jvim.toggle({
+                  name = "git signs",
+                  get = function()
+                    return require("gitsigns.config").config.signcolumn
+                  end,
+                  set = function(state)
+                    gs.toggle_signs(state)
+                  end,
+                })
+              end,
+              "Toggle signs",
+            },
+          }, function(opts)
+            opts.buf = buf
+            opts.desc = "Git " .. opts.desc
+          end)
+        end,
+      }
+    end,
+  },
+
+  {
     "christoomey/vim-tmux-navigator",
     cmd = {
       "TmuxNavigateLeft",

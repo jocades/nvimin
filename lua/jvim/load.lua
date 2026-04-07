@@ -171,16 +171,6 @@ function Plugin:setup()
   end
 end
 
----@generic T
----@param f T | fun(...): T
----@return T
-local function ocall(f, ...)
-  if vim.is_callable(f) then
-    return f(...)
-  end
-  return f
-end
-
 ---Merge two tables recursively, modifying `dst`.
 ---@param dst table
 ---@param src table
@@ -223,7 +213,7 @@ function Plugin:resolve()
           if not self.spec[k] then
             self.spec[k] = {}
           end
-          local src = ocall(parent.spec[k])
+          local src = jvim.ocall(parent.spec[k])
           if k == "opts" then
             merge(self.spec[k], src, true)
           else

@@ -2,7 +2,7 @@ return {
   "stevearc/conform.nvim",
   opts = {
     format_on_save = function(buf)
-      if vim.g.disable_autoformat or vim.b[buf].disable_autoformat then
+      if not vim.g.autoformat and not vim.b[buf].autoformat then
         return
       end
       return { timeout_ms = 500, lsp_format = "fallback" }
@@ -26,6 +26,8 @@ return {
     },
   },
   config = function(opts)
+    vim.g.autoformat = true
+
     require("conform").setup(opts)
     local fmt = require("conform").formatters
 
