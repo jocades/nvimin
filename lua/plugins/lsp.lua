@@ -101,39 +101,49 @@ return {
       end
     end
 
+    local function on_attach(_, _)
+      return {
+        -- Movement
+        { "gd", vim.lsp.buf.definition, "Goto Definition" },
+        {
+          "gr",
+          function()
+            Snacks.picker.lsp_references()
+          end,
+          "Goto References",
+        },
+        { "gD", vim.lsp.buf.declaration, "Goto Declaration" },
+        { "gtd", vim.lsp.buf.type_definition, "Type Definition" },
+        { "gI", vim.lsp.buf.implementation, "Goto Implementation" },
+        { "]d", jump(1), "Goto Next Diagnostic" },
+        { "[d", jump(-1), "Goto Previous Diagnostic" },
+        { "]i", jump(1, severity.INFO), "Goto Next Info" },
+        { "[i", jump(-1, severity.INFO), "Goto Previous Info" },
+        { "]e", jump(1, severity.ERROR), "Goto Next Error" },
+        { "[e", jump(-1, severity.ERROR), "Goto Previous Error" },
+        { "]w", jump(1, severity.WARN), "Goto Next Warning" },
+        { "[w", jump(-1, severity.WARN), "Goto Previous Warning" },
+
+        -- Actions
+        { "K", vim.lsp.buf.hover, "Hover Documentation" },
+        { "<leader>k", vim.diagnostic.open_float, "Open diagnostic float" },
+        { "<leader>rn", vim.lsp.buf.rename, "Rename" },
+        {
+          "<leader>ca",
+          function()
+            require("actions-preview").code_actions()
+          end,
+          "Code Action",
+        },
+      }
+    end
+
     vim.api.nvim_create_autocmd("LspAttach", {
       callback = function(ev)
-        --local client = vim.lsp.get_client_by_id(ev.data.client_id)
-        -- stylua: ignore
-        jvim.nmap({
-          -- Movement
-          { "gd", vim.lsp.buf.definition, "Goto Definition" },
-          { "gr", function() Snacks.picker.lsp_references() end, "Goto References" },
-          { "gD", vim.lsp.buf.declaration, "Goto Declaration" },
-          { "gtd", vim.lsp.buf.type_definition, "Type Definition" },
-          { "gI", vim.lsp.buf.implementation, "Goto Implementation" },
-          { "]d", jump(1), "Goto Next Diagnostic" },
-          { "[d", jump(-1), "Goto Previous Diagnostic" },
-          { "]i", jump(1, severity.INFO), "Goto Next Info" },
-          { "[i", jump(-1, severity.INFO), "Goto Previous Info" },
-          { "]e", jump(1, severity.ERROR), "Goto Next Error" },
-          { "[e", jump(-1, severity.ERROR), "Goto Previous Error" },
-          { "]w", jump(1, severity.WARN), "Goto Next Warning" },
-          { "[w", jump(-1, severity.WARN), "Goto Previous Warning" },
-
-          -- Actions
-          { "K", vim.lsp.buf.hover, "Hover Documentation" },
-          { "<leader>k", vim.diagnostic.open_float, "Open diagnostic float" },
-          { "<leader>rn", vim.lsp.buf.rename, "Rename" },
-          { "<leader>ca",
-            function()
-              require("actions-preview").code_actions()
-            end,
-            "Code Action",
-          },
-        }, function(opts)
-          ---@diagnostic disable-next-line: inject-field
-          opts.buffer = ev.buf
+        local client = vim.lsp.get_client_by_id(ev.data.client_id)
+        local keys = on_attach(client, ev.buf)
+        jvim.nmap(keys, function(opts)
+          opts.buf = ev.buf
           opts.desc = "LSP " .. opts.desc
         end)
       end,

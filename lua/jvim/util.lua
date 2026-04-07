@@ -1,12 +1,21 @@
 local M = {}
 
+---comment
+---@param mode string|string[]
+---@param lhs string
+---@param rhs fun()|string
+---@param opts? string|vim.keymap.set.Opts
+---@param mod? fun(opts: vim.keymap.set.Opts)
 function M.map(mode, lhs, rhs, opts, mod)
   opts = type(opts) == "string" and { desc = opts } or opts
-  vim.keymap.set(mode, lhs, rhs, mod and mod(opts) or opts)
+  if mod then ---@cast opts -?
+    mod(opts)
+  end
+  vim.keymap.set(mode, lhs, rhs, opts)
 end
 
 ---@param keymaps [string, fun()|string, string|vim.keymap.set.Opts][]
----@param mod? fun(opts: vim.keymap.set.Opts): nil
+---@param mod? fun(opts: vim.keymap.set.Opts)
 function M.nmap(keymaps, mod)
   for _, km in ipairs(keymaps) do
     M.map("n", km[1], km[2], km[3], mod)
