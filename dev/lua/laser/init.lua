@@ -3,7 +3,7 @@ local M = {}
 ---@class laser.Config
 local config = {
   root = vim.fs.joinpath(vim.fn.stdpath("data"), "laser"),
-  save_on_toggle = false,
+  autowrite = false,
 }
 
 ---Merge two tables recursively, modifying `dst`.
@@ -22,57 +22,61 @@ local function merge(dst, src)
   end
 end
 
----@class laser.List
+---An ordered set
+---@class laser.Set
 ---@field vec string[]
 ---@field map table<string, number>
-local List = {}
-List.__index = List
+local Set = {}
+Set.__index = Set
 
-function List.new()
-  local self = setmetatable({}, List)
+---@param items? string[]
+function Set.new(items)
+  local self = setmetatable({}, Set)
   self.vec = {}
   self.map = {}
-  return self
-end
-
----@param items string[]
-function List.from(items)
-  local self = List.new()
-  for _, item in ipairs(items) do
-    item = vim.trim(item)
-    if item ~= "" and not self.map[item] then
-      self:push(item)
+  if items then
+    for _, item in ipairs(items) do
+      self:add(item)
     end
   end
   return self
 end
 
 ---@param item string
-function List:push(item)
-  table.insert(self.vec, item)
-  self.map[item] = #self.vec
+function Set:add(item)
+  if not self.map[item] then
+    table.insert(self.vec, item)
+    self.map[item] = #self.vec
+  end
 end
 
-function List:isempty()
+function Set:isempty()
   return next(self.vec) == nil
 end
 
----@type {win: laser.Window, cwd: string, path: string, items: laser.List, fresh: boolean}
+function Set:iter()
+  return ipairs(self.vec)
+end
+
+---@type {win:laser.Window, root:string, file:string, items:laser.Set, fresh:boolean}
 local state = {}
 
 local function write()
-  vim.fn.writefile(state.items.vec, state.path)
+  vim.fn.writefile(state.items.vec, state.file)
 end
 
 function M.load()
-  state.cwd = assert(vim.uv.cwd())
-  local hash = vim.fn.sha256(state.cwd):sub(1, 8)
-  state.path = vim.fs.joinpath(config.root, hash)
-  if not vim.uv.fs_stat(state.path) then
-    state.items = List.new()
+  local cwd = assert(vim.uv.cwd())
+  state.root = vim.fs.root(cwd, ".git") or cwd
+
+  local hash = vim.fn.sha256(state.root):sub(1, 8)
+  state.file = vim.fs.joinpath(config.root, hash)
+
+  if not vim.uv.fs_stat(state.file) then
+    state.items = Set.new()
     state.fresh = true
   else
-    state.items = List.from(vim.fn.readfile(state.path))
+    state.items = Set.new(vim.fn.readfile(state.file))
     state.fresh = false
   end
 end
@@ -81,19 +85,17 @@ function M.store()
   if not state.items:isempty() then
     write()
     state.fresh = false
-  else
-    if not state.fresh then
-      write()
-    end
+  elseif not state.fresh then
+    write()
   end
 end
 
 function M.add()
-  local item = vim.fs.relpath(state.cwd, vim.api.nvim_buf_get_name(0))
-  if not item or item == "." or state.items.map[item] then
+  local path = vim.api.nvim_buf_get_name(0)
+  if path == "" then
     return
   end
-  state.items:push(item)
+  state.items:add(path)
 end
 
 ---@param path string
@@ -118,11 +120,11 @@ end
 ---@param index number
 ---@param opts? {split: boolean, vsplit: boolean}
 function M.jump(index, opts)
-  local relpath = state.items.vec[index]
-  if not relpath then
+  local path = state.items.vec[index]
+  if not path then
     return
   end
-  open(relpath, opts)
+  open(path, opts)
 end
 
 ---@param line string
@@ -132,11 +134,40 @@ function M.select(line, opts)
   if line == "" then
     return
   end
-  open(line, opts)
+  local path = vim.fs.abspath(vim.fs.joinpath(state.root, line))
+  open(path, opts)
 end
 
 function M.toggle()
   state.win:toggle()
+end
+
+---@param lines string[]
+local function sync(lines)
+  local items = Set.new()
+
+  for _, line in ipairs(lines) do
+    line = vim.trim(line)
+    if line ~= "" then
+      local path = vim.fs.joinpath(state.root, line)
+      items:add(path)
+    end
+  end
+
+  state.items = items
+
+  if config.autowrite then
+    M.store()
+  end
+end
+
+local function display()
+  local lines = {}
+  for _, path in state.items:iter() do
+    local line = vim.fs.relpath(state.root, path)
+    table.insert(lines, line)
+  end
+  return lines
 end
 
 local function create_window()
@@ -169,21 +200,15 @@ local function create_window()
     },
 
     on_buf = function(self)
-      vim.bo[self.buf].ft = "laser"
-
       self:on("BufLeave", function()
-        state.items = List.from(self:get_lines())
-
-        if config.save_on_toggle then
-          M.store()
-        end
-
+        sync(self:get_lines())
         self:hide()
       end)
+      vim.bo[self.buf].ft = "laser"
     end,
 
     on_win = function(self)
-      self:set_lines(state.items.vec)
+      self:set_lines(display())
       vim.wo[self.win].fillchars = "eob: "
     end,
   })
