@@ -1,12 +1,3 @@
----@class Laser
----@field win laser.Window
-_G.Laser = setmetatable({}, {
-  __index = function(t, k)
-    t[k] = require("laser." .. k)
-    return rawget(t, k)
-  end,
-})
-
 local M = {}
 
 ---@class laser.Config
@@ -31,15 +22,46 @@ local function merge(dst, src)
   end
 end
 
----@type {win: laser.Window, cwd: string, path: string, items: string[], fresh: boolean}
+---@class laser.List
+---@field vec string[]
+---@field map table<string, number>
+local List = {}
+List.__index = List
+
+function List.new()
+  local self = setmetatable({}, List)
+  self.vec = {}
+  self.map = {}
+  return self
+end
+
+---@param items string[]
+function List.from(items)
+  local self = List.new()
+  for _, item in ipairs(items) do
+    item = vim.trim(item)
+    if item ~= "" and not self.map[item] then
+      self:push(item)
+    end
+  end
+  return self
+end
+
+---@param item string
+function List:push(item)
+  table.insert(self.vec, item)
+  self.map[item] = #self.vec
+end
+
+function List:isempty()
+  return next(self.vec) == nil
+end
+
+---@type {win: laser.Window, cwd: string, path: string, items: laser.List, fresh: boolean}
 local state = {}
 
 local function write()
-  vim.fn.writefile(state.items, state.path)
-end
-
-function M.toggle()
-  state.win:toggle()
+  vim.fn.writefile(state.items.vec, state.path)
 end
 
 function M.load()
@@ -47,16 +69,16 @@ function M.load()
   local hash = vim.fn.sha256(state.cwd):sub(1, 8)
   state.path = vim.fs.joinpath(config.root, hash)
   if not vim.uv.fs_stat(state.path) then
-    state.items = {}
+    state.items = List.new()
     state.fresh = true
   else
-    state.items = vim.fn.readfile(state.path)
+    state.items = List.from(vim.fn.readfile(state.path))
     state.fresh = false
   end
 end
 
 function M.store()
-  if not vim.tbl_isempty(state.items) then
+  if not state.items:isempty() then
     write()
     state.fresh = false
   else
@@ -67,21 +89,17 @@ function M.store()
 end
 
 function M.add()
-  local rel = vim.fs.relpath(state.cwd, vim.api.nvim_buf_get_name(0))
-  if rel and rel ~= "." then
-    table.insert(state.items, rel)
-  end
-end
-
----@param index number
----@param opts? {split: boolean, vsplit: boolean}
-function M.select(index, opts)
-  local relpath = state.items[index]
-  if not relpath then
+  local item = vim.fs.relpath(state.cwd, vim.api.nvim_buf_get_name(0))
+  if not item or item == "." or state.items.map[item] then
     return
   end
+  state.items:push(item)
+end
 
-  local buf = vim.fn.bufadd(relpath)
+---@param path string
+---@param opts? {split: boolean, vsplit: boolean}
+local function open(path, opts)
+  local buf = vim.fn.bufadd(path)
   if not vim.api.nvim_buf_is_loaded(buf) then
     vim.fn.bufload(buf)
   end
@@ -97,8 +115,32 @@ function M.select(index, opts)
   vim.api.nvim_set_current_buf(buf)
 end
 
+---@param index number
+---@param opts? {split: boolean, vsplit: boolean}
+function M.jump(index, opts)
+  local relpath = state.items.vec[index]
+  if not relpath then
+    return
+  end
+  open(relpath, opts)
+end
+
+---@param line string
+---@param opts? {split: boolean, vsplit: boolean}
+function M.select(line, opts)
+  line = vim.trim(line)
+  if line == "" then
+    return
+  end
+  open(line, opts)
+end
+
+function M.toggle()
+  state.win:toggle()
+end
+
 local function create_window()
-  state.win = Laser.win.new({
+  state.win = require("laser.win").new({
     keys = {
       {
         "q",
@@ -108,23 +150,20 @@ local function create_window()
       },
       {
         "<cr>",
-        function(self)
-          local index = self:get_cursor()
-          M.select(index)
+        function()
+          M.select(vim.api.nvim_get_current_line())
         end,
       },
       {
         "<C-v>",
-        function(self)
-          local index = self:get_cursor()
-          M.select(index, { vsplit = true })
+        function()
+          M.select(vim.api.nvim_get_current_line(), { vsplit = true })
         end,
       },
       {
         "<C-h>",
-        function(self)
-          local index = self:get_cursor()
-          M.select(index, { split = true })
+        function()
+          M.select(vim.api.nvim_get_current_line(), { split = true })
         end,
       },
     },
@@ -133,14 +172,7 @@ local function create_window()
       vim.bo[self.buf].ft = "laser"
 
       self:on("BufLeave", function()
-        local clean = {}
-        for _, line in ipairs(self:get_lines()) do
-          if vim.trim(line) ~= "" then
-            table.insert(clean, line)
-          end
-        end
-
-        state.items = clean
+        state.items = List.from(self:get_lines())
 
         if config.save_on_toggle then
           M.store()
@@ -151,7 +183,8 @@ local function create_window()
     end,
 
     on_win = function(self)
-      self:set_lines(state.items)
+      self:set_lines(state.items.vec)
+      vim.wo[self.win].fillchars = "eob: "
     end,
   })
 end
@@ -160,8 +193,10 @@ end
 function M.setup(opts)
   merge(config, opts or {})
   vim.fn.mkdir(config.root, "p")
-  create_window()
+
   M.load()
+  create_window()
+
   vim.api.nvim_create_autocmd("VimLeavePre", {
     callback = function()
       M.store()
