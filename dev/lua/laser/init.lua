@@ -6,22 +6,6 @@ local config = {
   autowrite = false,
 }
 
----Merge two tables recursively, modifying `dst`.
----@param dst table
----@param src table
-local function merge(dst, src)
-  for k, v in pairs(src) do
-    if type(v) == "table" then
-      if not dst[k] then
-        dst[k] = {}
-      end
-      merge(dst[k], v)
-    else
-      dst[k] = v
-    end
-  end
-end
-
 ---An ordered set
 ---@class laser.Set
 ---@field vec string[]
@@ -142,6 +126,10 @@ function M.toggle()
   state.win:toggle()
 end
 
+function M.list()
+  return state.items.vec
+end
+
 ---@param lines string[]
 local function sync(lines)
   local items = Set.new()
@@ -216,7 +204,7 @@ end
 
 ---@param opts? laser.Config
 function M.setup(opts)
-  merge(config, opts or {})
+  jvim.merge(config, opts or {})
   vim.fn.mkdir(config.root, "p")
 
   M.load()

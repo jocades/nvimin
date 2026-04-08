@@ -59,6 +59,25 @@ function M.ocall(x, ...)
   return x
 end
 
+function M.isdict(v)
+  return type(v) == "table" and (vim.tbl_isempty(v) or not vim.islist(v))
+end
+
+---Merge two tables recursively, modifying `dst`.
+---@param dst table
+---@param src table
+---@param keep? boolean
+function M.merge(dst, src, keep)
+  for k, v in pairs(src) do
+    local existing = dst[k]
+    if M.isdict(v) and M.isdict(existing) then
+      M.merge(existing, v, keep)
+    elseif not keep or existing == nil then
+      dst[k] = v
+    end
+  end
+end
+
 ---@class jvim.toggle.Opts
 ---@field name string
 ---@field get boolean|(fun():boolean)

@@ -4,6 +4,7 @@ local M = {}
 ---@field [1] string
 ---@field version? string|vim.VersionRange
 ---@field main? string
+---@field name? string
 ---@field lazy? boolean
 ---@field deps? (string|jvim.Spec)[]
 ---@field dev? boolean
@@ -171,26 +172,6 @@ function Plugin:setup()
   end
 end
 
----Merge two tables recursively, modifying `dst`.
----@param dst table
----@param src table
----@param keep? boolean
-local function merge(dst, src, keep)
-  for k, v in pairs(src) do
-    local existing = dst[k]
-    if type(v) == "table" then
-      if not existing then
-        dst[k] = {}
-      end
-      merge(dst[k], v, keep)
-    else
-      if not existing or (existing and not keep) then
-        dst[k] = v
-      end
-    end
-  end
-end
-
 local merge_keys = { "deps", "event", "cmd", "ft", "keys", "opts", "config" }
 
 function Plugin:resolve()
@@ -215,7 +196,7 @@ function Plugin:resolve()
           end
           local src = jvim.ocall(parent.spec[k])
           if k == "opts" then
-            merge(self.spec[k], src, true)
+            jvim.merge(self.spec[k], src, true)
           else
             vim.list_extend(self.spec[k], src)
           end
@@ -233,34 +214,31 @@ function Plugin:load()
 
   if self.spec.deps then
     for _, dep in ipairs(self.spec.deps) do
-      cache[type(dep) == "string" and dep or dep[1]]:load()
+      cache[type(dep) == "string" and stem(dep) or dep.name]:load()
     end
   end
 
-  local name = stem(self.spec[1])
   if not self.spec.dev then
-    vim.cmd.packadd(name)
+    vim.cmd.packadd(self.spec.name)
   end
 
   if self.spec.config then
     self.spec.config(self.spec.opts) ---@diagnostic disable-line: param-type-mismatch
   elseif self.spec.opts then
     if not self.spec.main then
-      self.spec.main = modname(name)
+      self.spec.main = modname(self.spec.name)
     end
 
     local ok, mod = pcall(require, self.spec.main)
     if not ok then
-      ok, mod = pcall(require, name)
+      ok, mod = pcall(require, self.spec.name)
       if not ok then
         jvim.error(("Unable to resolve modname for `%s`"):format(self.spec[1]))
         return
       end
     end
 
-    if mod.setup then
-      mod.setup(self.spec.opts)
-    end
+    jvim.ocall(mod.setup, self.spec.opts)
   end
 
   self.loaded = true
@@ -275,14 +253,18 @@ local function add(specs)
       add(spec.deps)
     end
 
-    local name = spec[1]
-    local parent = cache[name]
+    local src = spec[1]
+    if not spec.name then
+      spec.name = stem(src)
+    end
 
-    cache[name] = Plugin.new(spec, parent)
+    local parent = cache[spec.name]
+    cache[spec.name] = Plugin.new(spec, parent)
 
     if not spec.dev and not parent then
       table.insert(toadd, {
-        src = "https://github.com/" .. name,
+        src = "https://github.com/" .. src,
+        name = spec.name,
         version = spec.version,
       })
     end
@@ -318,6 +300,38 @@ local function walkdir(path, cb)
   end
 end
 
+local function autodetect()
+  local lock = vim.fs.joinpath(vim.fn.stdpath("config"), "nvim-pack-lock.json")
+  local fd = vim.uv.fs_open(lock, "r", tonumber("444", 8))
+  if not fd then
+    return
+  end
+  local stat = assert(vim.uv.fs_fstat(fd))
+  local data = assert(vim.uv.fs_read(fd, stat.size, 0))
+  assert(vim.uv.fs_close(fd))
+  local json = vim.json.decode(data) ---@type vim.pack.Lock
+
+  local todel = {}
+  for name, _ in pairs(json.plugins) do
+    if not cache[name] then
+      table.insert(todel, name)
+    end
+  end
+
+  if not vim.tbl_isempty(todel) then
+    local lines = {}
+    for i, name in ipairs(todel) do
+      lines[i] = "  - " .. name
+    end
+    local text = table.concat(lines, "\n")
+    local message = ("Delete %d plugin(s)?:\n\n%s\n"):format(#todel, text)
+    local choice = vim.fn.confirm(message, "&Yes\n&No")
+    if choice == 1 then
+      vim.pack.del(todel)
+    end
+  end
+end
+
 ---@class jvim.LoadConfig
 ---@field import? string Relative path to `plugins` directory
 ---@field dev? string Path to be added to neovim's runtime.
@@ -345,6 +359,7 @@ function M.setup(opts)
 
   vim.schedule(function()
     vim.api.nvim_exec_autocmds("User", { pattern = "LazyLoad" })
+    --autodetect()
   end)
 end
 

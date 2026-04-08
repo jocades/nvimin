@@ -21,6 +21,7 @@ return {
     lazy = false,
     opts = {
       picker = {
+        ui_select = false,
         layout = { preset = "default", layout = { backdrop = false } },
       },
       scratch = {},
@@ -170,5 +171,16 @@ return {
       end
       return keys
     end,
+  },
+
+  {
+    "jocades/resurrect",
+    dev = true,
+    event = "BufReadPre",
+    opts = {},
+    -- stylua: ignore
+    keys = {
+      { "<leader>rl", function() require("resurrect").load() end }
+    },
   },
 }
