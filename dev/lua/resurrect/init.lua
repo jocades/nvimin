@@ -58,6 +58,7 @@ function M.setup(opts)
   vim.fn.mkdir(config.root, "p")
 
   vim.api.nvim_create_autocmd("VimLeavePre", {
+    group = vim.api.nvim_create_augroup("resurrect", { clear = true }),
     callback = function()
       if needs_store() then
         M.store()
