@@ -42,30 +42,46 @@ function Set:iter()
   return ipairs(self.vec)
 end
 
----@type {win:laser.Window, root:string, file:string, items:laser.Set, fresh:boolean}
-local state = {}
+---@type {win:laser.Window, root:string, file:string, items:laser.Set, fresh:boolean}|nil
+local cached_state
+
+local function get()
+  if cached_state then
+    return cached_state
+  end
+
+  cached_state = {}
+
+  local cwd = assert(vim.uv.cwd())
+  cached_state.root = vim.fs.root(cwd, ".git") or cwd
+
+  local hash = vim.fn.sha256(cached_state.root):sub(1, 8)
+  cached_state.file = vim.fs.joinpath(config.root, hash)
+
+  if not vim.uv.fs_stat(cached_state.file) then
+    cached_state.items = Set.new()
+    cached_state.fresh = true
+  else
+    cached_state.items = Set.new(vim.fn.readfile(cached_state.file))
+    cached_state.fresh = false
+  end
+
+  cached_state.win = M._create_window()
+
+  return cached_state
+end
 
 local function write()
+  local state = get()
   vim.fn.writefile(state.items.vec, state.file)
 end
 
 function M.load()
-  local cwd = assert(vim.uv.cwd())
-  state.root = vim.fs.root(cwd, ".git") or cwd
-
-  local hash = vim.fn.sha256(state.root):sub(1, 8)
-  state.file = vim.fs.joinpath(config.root, hash)
-
-  if not vim.uv.fs_stat(state.file) then
-    state.items = Set.new()
-    state.fresh = true
-  else
-    state.items = Set.new(vim.fn.readfile(state.file))
-    state.fresh = false
-  end
+  get()
 end
 
 function M.store()
+  local state = get()
   if not state.items:isempty() then
     write()
     state.fresh = false
@@ -79,7 +95,7 @@ function M.add()
   if path == "" then
     return
   end
-  state.items:add(path)
+  get().items:add(path)
 end
 
 ---@param path string
@@ -104,7 +120,7 @@ end
 ---@param index number
 ---@param opts? {split: boolean, vsplit: boolean}
 function M.jump(index, opts)
-  local path = state.items.vec[index]
+  local path = get().items.vec[index]
   if not path then
     return
   end
@@ -118,20 +134,21 @@ function M.select(line, opts)
   if line == "" then
     return
   end
-  local path = vim.fs.abspath(vim.fs.joinpath(state.root, line))
+  local path = vim.fs.abspath(vim.fs.joinpath(get().root, line))
   open(path, opts)
 end
 
 function M.toggle()
-  state.win:toggle()
+  get().win:toggle()
 end
 
 function M.list()
-  return state.items.vec
+  return get().items.vec
 end
 
 ---@param lines string[]
 local function sync(lines)
+  local state = get()
   local items = Set.new()
 
   for _, line in ipairs(lines) do
@@ -150,6 +167,7 @@ local function sync(lines)
 end
 
 local function display()
+  local state = get()
   local lines = {}
   for _, path in state.items:iter() do
     local line = vim.fs.relpath(state.root, path)
@@ -158,8 +176,8 @@ local function display()
   return lines
 end
 
-local function create_window()
-  state.win = require("laser.win").new({
+function M._create_window()
+  return require("laser.win").new({
     keys = {
       {
         "q",
@@ -206,9 +224,6 @@ end
 function M.setup(opts)
   jvim.merge(config, opts or {})
   vim.fn.mkdir(config.root, "p")
-
-  M.load()
-  create_window()
 
   vim.api.nvim_create_autocmd("VimLeavePre", {
     callback = function()
