@@ -17,29 +17,18 @@ return {
   },
 
   {
-    "folke/snacks.nvim",
-    lazy = false,
-    opts = {
-      picker = {
-        ui_select = false,
-        layout = { preset = "default", layout = { backdrop = false } },
-      },
-      scratch = {},
+    "christoomey/vim-tmux-navigator",
+    cmd = {
+      "TmuxNavigateLeft",
+      "TmuxNavigateDown",
+      "TmuxNavigateUp",
+      "TmuxNavigateRight",
     },
-    -- stylua: ignore
     keys = {
-      { "<C-p>", function() Snacks.picker.files() end, "Find files" },
-      { "<leader>fp", function() Snacks.picker.pickers() end, "Find pickers" },
-      { "<leader>fw", function() Snacks.picker.grep() end, "Find word (grep)" },
-      { "<leader>fc", function() Snacks.picker.grep_word() end, "Find word under cursor (grep)" },
-      { "<leader>fl", function() Snacks.picker.lines() end, "Find lines" },
-      { "<leader>fb", function() Snacks.picker.buffers() end, "Find buffers" },
-      { "<leader>fh", function() Snacks.picker.help() end, "Find help" },
-      { "<leader>fm", function() Snacks.picker.man() end, "Find man" },
-      { "<leader>fk", function() Snacks.picker.keymaps() end, "Find keys" },
-
-      { "<leader>sb", function() Snacks.scratch() end, "Open scratch buffer" },
-      { "<leader>fs", function() Snacks.scratch.select() end, "Search scratch buffer" },
+      { "<C-h>", "<cmd>TmuxNavigateLeft<cr>" },
+      { "<C-j>", "<cmd>TmuxNavigateDown<cr>" },
+      { "<C-k>", "<cmd>TmuxNavigateUp<cr>" },
+      { "<C-l>", "<cmd>TmuxNavigateRight<cr>" },
     },
   },
 
@@ -126,22 +115,6 @@ return {
   },
 
   {
-    "christoomey/vim-tmux-navigator",
-    cmd = {
-      "TmuxNavigateLeft",
-      "TmuxNavigateDown",
-      "TmuxNavigateUp",
-      "TmuxNavigateRight",
-    },
-    keys = {
-      { "<C-h>", "<cmd>TmuxNavigateLeft<cr>" },
-      { "<C-j>", "<cmd>TmuxNavigateDown<cr>" },
-      { "<C-k>", "<cmd>TmuxNavigateUp<cr>" },
-      { "<C-l>", "<cmd>TmuxNavigateRight<cr>" },
-    },
-  },
-
-  {
     "jocades/bbuf",
     dev = true,
     -- stylua: ignore
@@ -181,6 +154,59 @@ return {
     -- stylua: ignore
     keys = {
       { "<leader>rl", function() require("resurrect").load() end }
+    },
+  },
+
+  {
+    "folke/snacks.nvim",
+    lazy = false,
+    opts = {
+      picker = {
+        ui_select = false,
+        layout = { preset = "default", layout = { backdrop = false } },
+      },
+      scratch = {},
+      dashboard = {
+        preset = {
+        -- stylua: ignore
+          keys = {
+            { icon = " ", key = "f", desc = "Find File", action = ":lua Snacks.dashboard.pick('files')" },
+            { icon = "󱇧 ", key = "n", desc = "New File", action = ":ene | startinsert" },
+            { icon = "󰈙 ", key = "w", desc = "Find Grep", action = ":lua Snacks.dashboard.pick('live_grep')" },
+            { icon = " ", key = "r", desc = "Resurrect", action = ":lua require('resurrect').load()" },
+            { icon = " ", key = "c", desc = "Config", action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
+            { icon = " ", key = "q", desc = "Quit", action = ":qa" },
+          },
+          header = [[
+           ██╗██╗   ██╗██╗███╗   ███╗          Z
+           ██║██║   ██║██║████╗ ████║      Z    
+           ██║██║   ██║██║██╔████╔██║   z       
+      ██   ██║╚██╗ ██╔╝██║██║╚██╔╝██║ z         
+      ╚█████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║           
+       ╚════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝           
+      ―――――――――――――――――――――――――――――――           
+]],
+        },
+        sections = {
+          { section = "header" },
+          { section = "keys", gap = 1, padding = 1 },
+        },
+      },
+    },
+    -- stylua: ignore
+    keys = {
+      { "<C-p>", function() Snacks.picker.files() end, "Find files" },
+      { "<leader>fp", function() Snacks.picker.pickers() end, "Find pickers" },
+      { "<leader>fw", function() Snacks.picker.grep() end, "Find word (grep)" },
+      { "<leader>fc", function() Snacks.picker.grep_word() end, "Find word under cursor (grep)" },
+      { "<leader>fl", function() Snacks.picker.lines() end, "Find lines" },
+      { "<leader>fb", function() Snacks.picker.buffers() end, "Find buffers" },
+      { "<leader>fh", function() Snacks.picker.help() end, "Find help" },
+      { "<leader>fm", function() Snacks.picker.man() end, "Find man" },
+      { "<leader>fk", function() Snacks.picker.keymaps() end, "Find keys" },
+
+      { "<leader>sb", function() Snacks.scratch() end, "Open scratch buffer" },
+      { "<leader>fs", function() Snacks.scratch.select() end, "Search scratch buffer" },
     },
   },
 }
