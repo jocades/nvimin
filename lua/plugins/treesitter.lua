@@ -25,6 +25,7 @@ return {
         "typescript",
         "vim",
         "vimdoc",
+        "sql",
         "xml",
         "yaml",
         "go",
