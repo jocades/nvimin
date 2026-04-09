@@ -12,22 +12,6 @@ return {
   },
 
   {
-    "windwp/nvim-ts-autotag",
-    event = "InsertEnter",
-    opts = {},
-  },
-
-  {
-    "folke/lazydev.nvim",
-    ft = "lua",
-    opts = {
-      library = {
-        { path = "snacks.nvim", words = { "Snacks" } },
-      },
-    },
-  },
-
-  {
     "saghen/blink.cmp",
     version = vim.version.range("1"),
     event = "InsertEnter",
@@ -77,6 +61,16 @@ return {
           "mason",
           "notify",
         },
+      },
+    },
+  },
+
+  {
+    "folke/lazydev.nvim",
+    ft = "lua",
+    opts = {
+      library = {
+        { path = "snacks.nvim", words = { "Snacks" } },
       },
     },
   },

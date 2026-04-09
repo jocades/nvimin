@@ -48,6 +48,26 @@ function M.warn(message)
   M.notify(message, vim.log.levels.WARN)
 end
 
+M.nvim_has_args = vim.fn.argc(-1) > 0
+
+---@param fn fun()
+function M.on_lazy_load(fn)
+  vim.api.nvim_create_autocmd("User", {
+    once = true,
+    pattern = "LazyLoad",
+    callback = fn,
+  })
+end
+
+---@param fn fun()
+function M.maybe_lazy(fn)
+  if M.nvim_has_args then
+    fn()
+  else
+    M.on_lazy_load(fn)
+  end
+end
+
 ---Optional call (type narrowing is kind of cursed in lua_ls, needs manual @cast at call site)
 ---@generic T
 ---@param x T | fun(...): T

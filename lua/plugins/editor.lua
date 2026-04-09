@@ -1,7 +1,7 @@
 return {
   {
     "nvim-mini/mini.files",
-    lazy = false,
+    lazy = not jvim.nvim_has_args,
     deps = { { "nvim-mini/mini.icons", opts = {} } },
     opts = {},
     -- stylua: ignore

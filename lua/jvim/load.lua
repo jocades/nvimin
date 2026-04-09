@@ -5,7 +5,7 @@ local M = {}
 ---@field version? string|vim.VersionRange
 ---@field main? string
 ---@field name? string
----@field lazy? boolean
+---@field lazy? boolean|fun():boolean
 ---@field deps? (string|jvim.Spec)[]
 ---@field dev? boolean
 ---@field event? vim.api.keyset.events|vim.api.keyset.events[]
@@ -126,14 +126,12 @@ function Plugin:setup()
 
   self:resolve()
 
-  if self.spec.lazy ~= nil then
-    if not self.spec.lazy then
-      -- Eager load must set keymaps too since `on_key` will not be called
-      loadme("start")()
-      if self.spec.keys then
-        for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
-          set_keymap(keymap)
-        end
+  if self.spec.lazy ~= nil and not self.spec.lazy then
+    -- Eager load must set keymaps too since `on_key` will not be called
+    loadme("start")()
+    if self.spec.keys then
+      for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
+        set_keymap(keymap)
       end
     end
     return

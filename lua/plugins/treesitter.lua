@@ -16,7 +16,7 @@ return {
         "json5",
         "lua",
         "markdown",
-        --"markdown_inline",
+        "markdown_inline",
         "nix",
         "python",
         "rust",
@@ -45,6 +45,7 @@ return {
         pattern = fts,
         callback = function(ev)
           vim.treesitter.start(ev.buf)
+          vim.bo.indentexpr = "v:lua.require('nvim-treesitter').indentexpr()"
         end,
       })
     end,
@@ -55,6 +56,12 @@ return {
     event = "InsertEnter",
     config = function()
       require("nvim-treesitter-textobjects").setup()
+
+      local function select(capture)
+        return function()
+          require("nvim-treesitter-textobjects.select").select_textobject(capture, "textobjects")
+        end
+      end
 
       local function incremental_selection()
         local method = "textDocument/selectionRange"
@@ -67,26 +74,35 @@ return {
         end
       end
 
-      local function move(to, next)
+      local function move(capture, next)
         return function()
           local objs = require("nvim-treesitter-textobjects.move")
           if next then
-            objs.goto_next_start(to, "textobjects")
+            objs.goto_next_start(capture, "textobjects")
           else
-            objs.goto_previous_start(to, "textobjects")
+            objs.goto_previous_start(capture, "textobjects")
           end
         end
       end
 
-      local function swap(with, next)
+      local function swap(capture, next)
         return function()
           local objs = require("nvim-treesitter-textobjects.swap")
           if next then
-            objs.swap_next(with)
+            objs.swap_next(capture)
           else
-            objs.swap_previous(with)
+            objs.swap_previous(capture)
           end
         end
+      end
+
+      for lhs, rhs in pairs({
+        ["af"] = select("@function.outer"),
+        ["if"] = select("@function.inner"),
+        ["ac"] = select("@class.outer"),
+        ["ic"] = select("@class.inner"),
+      }) do
+        vim.keymap.set({ "x", "o" }, lhs, rhs)
       end
 
       jvim.nmap({
@@ -99,5 +115,11 @@ return {
         { "<leader>sP", swap("@parameter.outer", false) },
       })
     end,
+  },
+
+  {
+    "windwp/nvim-ts-autotag",
+    event = "InsertEnter",
+    opts = {},
   },
 }

@@ -1,9 +1,12 @@
 vim.pack.add({
-  { src = "https://github.com/catppuccin/nvim", name = "catppuccin" },
+  {
+    src = "https://github.com/catppuccin/nvim",
+    name = "catppuccin", --[[version = "1bf0701"]]
+  },
 })
 
---- Use previous highlights, the new ones completely break rust.
---- https://github.com/catppuccin/nvim/releases/tag/v2.0.0
+-- Use previous highlights, the new ones completely break rust.
+-- https://github.com/catppuccin/nvim/releases/tag/v2.0.0
 require("catppuccin").setup({
   no_italic = true,
   lsp_styles = {
@@ -55,6 +58,19 @@ require("catppuccin").setup({
       ["@tag.attribute.tsx"] = { fg = C.teal, style = O.styles.miscs or { "italic" } },
       ["@type.builtin.c"] = { fg = C.yellow, style = {} },
       ["@type.builtin.cpp"] = { fg = C.yellow, style = {} },
+
+      ["@lsp.typemod.class.defaultLibrary"] = { link = "@type.builtin" },
+      ["@lsp.typemod.enum.defaultLibrary"] = { link = "@type.builtin" },
+      ["@lsp.typemod.enumMember.defaultLibrary"] = { link = "@constant.builtin" },
+      ["@lsp.typemod.function.defaultLibrary"] = { link = "@function.builtin" },
+      ["@lsp.typemod.keyword.async"] = { link = "@keyword.coroutine" },
+      ["@lsp.typemod.macro.defaultLibrary"] = { link = "@function.builtin" },
+      ["@lsp.typemod.method.defaultLibrary"] = { link = "@function.builtin" },
+      ["@lsp.typemod.operator.injected"] = { link = "@operator" },
+      ["@lsp.typemod.string.injected"] = { link = "@string" },
+      ["@lsp.typemod.type.defaultLibrary"] = { link = "@type.builtin" },
+      ["@lsp.typemod.variable.defaultLibrary"] = { link = "@variable.builtin" },
+      ["@lsp.typemod.variable.injected"] = { link = "@variable" },
     }
   end,
 })
