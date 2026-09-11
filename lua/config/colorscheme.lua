@@ -71,6 +71,9 @@ require("catppuccin").setup({
       ["@lsp.typemod.type.defaultLibrary"] = { link = "@type.builtin" },
       ["@lsp.typemod.variable.defaultLibrary"] = { link = "@variable.builtin" },
       ["@lsp.typemod.variable.injected"] = { link = "@variable" },
+
+      -- dont use lsp hl for strings in rust since it breaks injections due to lsp having higher priority than treesitter.
+      ["@lsp.type.string.rust"] = {},
     }
   end,
 })
