@@ -28,20 +28,6 @@ local cache = {}
 ---@type vim.pack.Spec[]
 local toadd = {}
 
-local state = { debug_file = -1 }
-
----@param message string
-local function writeln(message)
-  if state.debug_file == -1 then
-    return
-  end
-  vim.uv.fs_write(state.debug_file, ("[%s] %s\n"):format(os.date("%X"), message), nil, function(err)
-    if err then
-      jvim.error("failed to write to `debug_file`: " .. err)
-    end
-  end)
-end
-
 ---@class jvim.Plugin
 ---@field spec jvim.Spec
 ---@field parent? jvim.Plugin
@@ -116,20 +102,16 @@ local function aslist(v)
 end
 
 function Plugin:setup()
-  ---@param on string
-  local function loadme(on)
-    return function()
-      self:load()
-      writeln(("Load on %s: %s"):format(on, self.spec[1]))
-    end
+  local function loadme()
+    self:load()
   end
 
   self:resolve()
 
   if self.spec.lazy ~= nil and not self.spec.lazy then
-    -- Eager load must set keymaps too since `on_key` will not be called
-    loadme("start")()
+    self:load()
     if self.spec.keys then
+      -- Eager load must set keymaps too since `on_key` will not be called
       for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
         set_keymap(keymap)
       end
@@ -141,32 +123,32 @@ function Plugin:setup()
 
   if self.spec.event then
     scheduled = true
-    on_event(self.spec.event, loadme(("event(%s)"):format(self.spec.event)))
+    on_event(self.spec.event, loadme)
   end
 
   if self.spec.cmd then
     scheduled = true
     for _, cmd in ipairs(aslist(self.spec.cmd)) do ---@diagnostic disable-line: param-type-mismatch
-      on_cmd(cmd, loadme(("cmd(%s)"):format(cmd)))
+      on_cmd(cmd, loadme)
     end
   end
 
   if self.spec.keys then
     scheduled = true
     for _, keymap in ipairs(self.spec.keys) do ---@diagnostic disable-line: param-type-mismatch
-      on_key(keymap, loadme(("key(%s)"):format(keymap[1])))
+      on_key(keymap, loadme)
     end
   end
 
   if self.spec.ft then
     scheduled = true
     for _, ft in ipairs(aslist(self.spec.ft)) do ---@diagnostic disable-line: param-type-mismatch
-      on_event("FileType", loadme(("ft(%s)"):format(ft)), ft)
+      on_event("FileType", loadme, ft)
     end
   end
 
   if not scheduled then
-    on_event("User", loadme("event(LazyLoad)"), "LazyLoad")
+    on_event("User", loadme, "LazyLoad")
   end
 end
 
@@ -337,10 +319,6 @@ end
 ---@param opts? jvim.LoadConfig
 function M.setup(opts)
   opts = opts or {}
-
-  if vim.env.DEBUG_LOAD then
-    state.debug_file = assert(vim.uv.fs_open("debug.load", "w", tonumber("644", 8)))
-  end
 
   if opts.dev then
     vim.opt.rtp:append(vim.fn.expand(opts.dev))

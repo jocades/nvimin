@@ -5,7 +5,7 @@
 (call_expression
   (scoped_identifier
     path: (identifier) @_path (#eq? @_path "sqlx")
-    name: (identifier) @_name (#any-of? @_name "raw_sql" "query"))
+    name: (identifier) @_name (#any-of? @_name "raw_sql" "query" "query_scalar"))
   (arguments [
     (string_literal (string_content) @injection.content)
     (raw_string_literal (string_content) @injection.content)
@@ -17,7 +17,7 @@
 (macro_invocation
   (scoped_identifier
     path: (identifier) @_path (#eq? @_path "sqlx")
-    name: (identifier) @_name (#any-of? @_name "query" "query_as"))
+    name: (identifier) @_name (#any-of? @_name "query" "query_as" "query_scalar"))
   (token_tree [
     (string_literal (string_content) @injection.content)
     (raw_string_literal (string_content) @injection.content)

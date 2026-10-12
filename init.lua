@@ -1,5 +1,5 @@
 vim.loader.enable()
-require("vim._core.ui2").enable({})
+require("vim._core.ui2").enable()
 
 _G.jvim = require("jvim.util")
 
@@ -14,3 +14,5 @@ for mode, mappings in pairs(require("config.keymaps")) do
     jvim.map(mode, k, t[1], t[2])
   end
 end
+
+-- require("config.statusline")

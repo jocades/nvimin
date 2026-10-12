@@ -30,6 +30,9 @@ return {
         "yaml",
         "go",
         "ocaml",
+        "svelte",
+        "swift",
+        "odin",
       }
 
       require("nvim-treesitter").install(langs)

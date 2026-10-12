@@ -179,30 +179,18 @@ end
 function M._create_window()
   return require("laser.win").new({
     keys = {
-      {
-        "q",
-        function(self)
-          self:hide()
-        end,
-      },
-      {
-        "<cr>",
-        function()
-          M.select(vim.api.nvim_get_current_line())
-        end,
-      },
-      {
-        "<C-v>",
-        function()
-          M.select(vim.api.nvim_get_current_line(), { vsplit = true })
-        end,
-      },
-      {
-        "<C-h>",
-        function()
-          M.select(vim.api.nvim_get_current_line(), { split = true })
-        end,
-      },
+      ["q"] = function(self)
+        self:hide()
+      end,
+      ["<cr>"] = function()
+        M.select(vim.api.nvim_get_current_line())
+      end,
+      ["<C-v>"] = function()
+        M.select(vim.api.nvim_get_current_line(), { vsplit = true })
+      end,
+      ["<C-h>"] = function()
+        M.select(vim.api.nvim_get_current_line(), { split = true })
+      end,
     },
 
     on_buf = function(self)

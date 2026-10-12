@@ -20,7 +20,13 @@ return {
         },
       },
       -- Rust
-      rust_analyzer = {},
+      rust_analyzer = {
+        settings = {
+          semanticHighlighting = {
+            strings = { enable = false },
+          },
+        },
+      },
       -- OCaml
       ocamllsp = {},
       -- C
@@ -64,6 +70,12 @@ return {
       nim_langserver = {},
       -- TypeScript
       tsgo = {},
+      -- Tailwind CSS
+      tailwindcss = {},
+      -- Python
+      basedpyright = {},
+      -- Svelte
+      svelte = {},
     }
 
     for server, config in pairs(servers) do
@@ -72,7 +84,7 @@ return {
     end
 
     -- Dont write logs to file, it gets massive over time
-    vim.lsp.log.set_level(vim.log.levels.WARN)
+    vim.lsp.log.set_level(vim.log.levels.OFF)
 
     vim.diagnostic.config({
       underline = true,
@@ -81,7 +93,6 @@ return {
         spacing = 4,
         source = "if_many",
         prefix = "●",
-        enabled = true, -- extra field for toggling
       },
       update_in_insert = false,
       severity_sort = true,

@@ -204,9 +204,9 @@ return {
       { "<leader>fh", function() Snacks.picker.help() end, "Find help" },
       { "<leader>fm", function() Snacks.picker.man() end, "Find man" },
       { "<leader>fk", function() Snacks.picker.keymaps() end, "Find keys" },
+      { "<leader>fs", function() Snacks.picker.lsp_symbols() end, "Search lsp symbols" },
 
       { "<leader>sb", function() Snacks.scratch() end, "Open scratch buffer" },
-      { "<leader>fs", function() Snacks.scratch.select() end, "Search scratch buffer" },
     },
   },
 }

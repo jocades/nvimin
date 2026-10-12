@@ -3,19 +3,20 @@
 ---@field buf number
 ---@field win number
 ---@field opts laser.win.Opts
+---@field _win_opts vim.api.keyset.win_config
 local Window = {}
 Window.__index = Window
 
----@class laser.win.Key
----@field [1] string
----@field [2] string|fun(self: laser.Window)
----@field mode? string
-
----@class laser.win.Opts
+---@class laser.win.Opts: vim.api.keyset.win_config
+---@field enter? boolean
 ---@field on_buf? fun(self: laser.Window)
 ---@field on_win? fun(self: laser.Window)
----@field keys? laser.win.Key[]
+---@field keys? table<string, fun(self: laser.Window)|laser.win.Key>,
 ---@field augroup? integer
+
+---@class laser.win.Key
+---@field [1] string|fun(self: laser.Window)
+---@field mode? string
 
 local id = 0
 
@@ -27,6 +28,7 @@ function Window.new(opts)
   self.buf = -1
   self.win = -1
   self.opts = opts or {}
+
   return self
 end
 
@@ -55,50 +57,68 @@ function Window:_wrap(f)
   end
 end
 
+function Window:_open_buf()
+  self.buf = vim.api.nvim_create_buf(false, true)
+
+  if self.opts.keys then
+    for lhs, map in pairs(self.opts.keys) do
+      local rhs, mode
+      if type(map) == "table" then
+        rhs = vim.is_callable(map[1]) and self:_wrap(map[1]) or map[1]
+        mode = map.mode or "n"
+      elseif vim.is_callable(map) then
+        rhs = self:_wrap(map)
+        mode = "n"
+      else
+        jvim.error(("Invalid rhs for `%s`"):format(lhs))
+      end
+
+      if rhs and mode then
+        vim.keymap.set(mode, lhs, rhs, { buf = self.buf })
+      end
+    end
+  end
+
+  ocall(self.opts.on_buf, self)
+end
+
+function Window:_open_win()
+  local maxw = vim.o.columns
+  local maxh = vim.o.lines
+  local w = math.floor(maxw * 0.35)
+  local h = math.floor(maxh * 0.25)
+  self.win = vim.api.nvim_open_win(self.buf, true, {
+    title = "Laser",
+    title_pos = "center",
+    relative = "editor",
+    width = w,
+    height = h,
+    row = math.floor((maxh - h) / 2 - 1),
+    col = math.floor((maxw - w) / 2),
+  })
+  ocall(self.opts.on_win, self)
+end
+
 function Window:show()
   if not self.opts.augroup then
     self.opts.augroup = vim.api.nvim_create_augroup("laser.window#" .. self.id, { clear = true })
   end
 
   if not self:buf_valid() then
-    self.buf = vim.api.nvim_create_buf(false, true)
-    if self.opts.keys then
-      for _, map in ipairs(self.opts.keys) do
-        local rhs = vim.is_callable(map[2]) and self:_wrap(map[2]) or map[2]
-        vim.keymap.set(map.mode or "n", map[1], rhs, { buf = self.buf })
-      end
-    end
-
-    ---Buf delete is not triggered on scratch buffers, this is a workaround to catch the
-    ---self:buf_valid() and set keymaps etc..
-    self:on("BufUnload", function()
-      --vim.api.nvim_buf_delete(self.buf, { unload = true })
-    end)
-
-    ocall(self.opts.on_buf, self)
+    self:_open_buf()
   end
 
   if not self:win_valid() then
-    local maxw = vim.o.columns
-    local maxh = vim.o.lines
-    local w = math.floor(maxw * 0.35)
-    local h = math.floor(maxh * 0.25)
-    self.win = vim.api.nvim_open_win(self.buf, true, {
-      title = "Laser",
-      title_pos = "center",
-      relative = "editor",
-      width = w,
-      height = h,
-      row = math.floor((maxh - h) / 2 - 1),
-      col = math.floor((maxw - w) / 2),
-    })
-    ocall(self.opts.on_win, self)
+    self:_open_win()
   end
 end
 
 function Window:hide()
   vim.api.nvim_win_close(self.win, true)
-  --vim.api.nvim_buf_delete(self.buf, { force = true })
+end
+
+function Window:close()
+  vim.api.nvim_buf_delete(self.buf, { force = true })
 end
 
 function Window:toggle()
@@ -116,7 +136,9 @@ function Window:focus()
 end
 
 function Window:map(lhs, rhs)
-  vim.keymap.set("n", lhs, rhs, { buf = self.buf })
+  if self:buf_valid() then
+    vim.keymap.set("n", lhs, rhs, { buf = self.buf })
+  end
 end
 
 ---@param ev vim.api.keyset.events|vim.api.keyset.events[]
